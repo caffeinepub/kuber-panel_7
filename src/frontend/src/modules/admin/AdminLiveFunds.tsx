@@ -19,7 +19,7 @@ function FundTransactionFeed({ fundType }: { fundType: FundKey }) {
     setTransactions(
       all
         .filter((t) => t.fundType === fundType)
-        .slice(-30)
+        .slice(-100)
         .reverse(),
     );
   }, [fundType]);
@@ -46,28 +46,44 @@ function FundTransactionFeed({ fundType }: { fundType: FundKey }) {
           {transactions.map((txn, i) => (
             <div
               key={txn.id}
-              className={`flex items-center justify-between px-4 py-3 hover:bg-secondary/30 transition-colors ${i === 0 ? "animate-slide-in" : ""}`}
+              className={`flex items-center justify-between px-4 py-3 hover:bg-secondary/20 transition-colors ${i === 0 ? "animate-slide-in" : ""}`}
             >
-              <div className="flex items-center gap-3">
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
-                    txn.type === "credit" ? "credit-badge" : "debit-badge"
-                  }`}
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
+                  ${txn.type === "credit" ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}
                 >
-                  {txn.type === "credit" ? "↑" : "↓"} {txn.type.toUpperCase()}
-                </span>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(txn.timestamp).toLocaleTimeString("en-IN")}
+                  {txn.type === "credit" ? "C" : "D"}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">
+                    {txn.type === "credit"
+                      ? "Amount Credited"
+                      : "Amount Debited"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(txn.timestamp).toLocaleTimeString("en-IN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: true,
+                    })}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0 ml-3">
+                <p
+                  className={`font-bold tabular-nums text-sm ${txn.type === "credit" ? "text-green-400" : "text-red-400"}`}
+                >
+                  {txn.type === "credit" ? "+" : "-"}
+                  {formatCurrency(txn.amount)}
+                </p>
+                <p
+                  className={`text-xs font-medium mt-0.5 ${txn.type === "credit" ? "text-green-500/70" : "text-red-500/70"}`}
+                >
+                  {txn.type === "credit" ? "CREDITED" : "DEBITED"}
                 </p>
               </div>
-              <span
-                className={`font-bold tabular-nums text-sm ${
-                  txn.type === "credit" ? "text-green-400" : "text-red-400"
-                }`}
-              >
-                {txn.type === "credit" ? "+" : "-"}
-                {formatCurrency(txn.amount)}
-              </span>
             </div>
           ))}
         </div>

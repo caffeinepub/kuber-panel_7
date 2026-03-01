@@ -1,6 +1,5 @@
 import { BankAccountForm } from "@/components/BankAccountForm";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -14,11 +13,9 @@ import {
   formatDate,
   getBankAccounts,
   getSession,
-  setBankAccounts,
 } from "@/lib/storage";
-import { Building2, Power } from "lucide-react";
+import { Building2 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export function AddBankAccount() {
   const session = getSession();
@@ -29,28 +26,6 @@ export function AddBankAccount() {
   );
 
   const handleSuccess = () => setRefreshKey((k) => k + 1);
-
-  const toggleTransaction = (accountId: string, currentEnabled: boolean) => {
-    const allAccounts = getBankAccounts();
-    const updated = allAccounts.map((acc) => {
-      if (acc.userId === session?.userId && acc.fundType === "general") {
-        if (acc.id === accountId) {
-          return { ...acc, transactionEnabled: !currentEnabled };
-        }
-        return { ...acc, transactionEnabled: false };
-      }
-      return acc;
-    });
-    setBankAccounts(updated);
-    setRefreshKey((k) => k + 1);
-    if (!currentEnabled) {
-      toast.success(
-        "Transaction ON - yeh bank account Live Fund Activity mein active hoga!",
-      );
-    } else {
-      toast.info("Transaction OFF - bank account band kar diya gaya.");
-    }
-  };
 
   const AccountTable = ({ accounts }: { accounts: BankAccount[] }) => {
     if (accounts.length === 0) {
@@ -70,64 +45,38 @@ export function AddBankAccount() {
               <TableHead className="text-muted-foreground">
                 Account No.
               </TableHead>
+              <TableHead className="text-muted-foreground">Holder</TableHead>
               <TableHead className="text-muted-foreground">IFSC</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Date</TableHead>
-              <TableHead className="text-muted-foreground text-center">
-                Transaction
-              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts.map((acc) => {
-              const isEnabled = acc.transactionEnabled === true;
-              const isApproved = acc.status === "approved";
-              return (
-                <TableRow
-                  key={acc.id}
-                  className="border-border hover:bg-secondary/50"
-                >
-                  <TableCell className="font-medium text-foreground">
-                    {acc.bankName}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-sm">
-                    ••••{acc.accountNumber.slice(-4)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground font-mono text-sm">
-                    {acc.ifscCode}
-                  </TableCell>
-                  <TableCell>
-                    <StatusBadge status={acc.status} />
-                  </TableCell>
-                  <TableCell className="text-muted-foreground text-sm">
-                    {formatDate(acc.submittedAt)}
-                  </TableCell>
-                  <TableCell className="text-center">
-                    {isApproved ? (
-                      <Button
-                        size="sm"
-                        variant={isEnabled ? "default" : "outline"}
-                        onClick={() => toggleTransaction(acc.id, isEnabled)}
-                        className={`gap-1.5 text-xs h-7 px-3 font-semibold transition-all ${
-                          isEnabled
-                            ? "bg-green-500 hover:bg-green-600 text-white border-green-500"
-                            : "border-muted-foreground/40 text-muted-foreground hover:border-green-500 hover:text-green-400"
-                        }`}
-                      >
-                        <Power className="w-3 h-3" />
-                        {isEnabled ? "ON" : "OFF"}
-                      </Button>
-                    ) : (
-                      <span className="text-xs text-muted-foreground/50 italic">
-                        {acc.status === "pending"
-                          ? "Pending approval"
-                          : "Rejected"}
-                      </span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {accounts.map((acc) => (
+              <TableRow
+                key={acc.id}
+                className="border-border hover:bg-secondary/50"
+              >
+                <TableCell className="font-medium text-foreground">
+                  {acc.bankName}
+                </TableCell>
+                <TableCell className="text-muted-foreground font-mono text-sm">
+                  ••••{acc.accountNumber.slice(-4)}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {acc.holderName}
+                </TableCell>
+                <TableCell className="text-muted-foreground font-mono text-sm">
+                  {acc.ifscCode}
+                </TableCell>
+                <TableCell>
+                  <StatusBadge status={acc.status} />
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {formatDate(acc.submittedAt)}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>
@@ -160,11 +109,11 @@ export function AddBankAccount() {
       <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
         <div className="px-6 py-4 border-b border-border">
           <h3 className="text-base font-semibold text-foreground">
-            Submitted Accounts
+            Bank Account History
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            History - Approved accounts mein Transaction ON karo Live Fund
-            Activity ke liye
+            Ye accounts saare fund modules mein bhi dikhenge. Fund module mein
+            jaake Transaction ON karo.
           </p>
         </div>
         <AccountTable accounts={userAccounts} key={refreshKey} />

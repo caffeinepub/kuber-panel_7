@@ -35,29 +35,80 @@ const FUND_ICONS: Record<FundType, string> = {
   mix: "🔀",
 };
 
+// Get the ON/OFF state for a specific account in a specific fund
+function isTransactionOnForFund(acc: BankAccount, fundType: FundType): boolean {
+  if (acc.fundType === "general") {
+    return acc.transactionEnabledFunds?.[fundType] === true;
+  }
+  return acc.transactionEnabled === true;
+}
+
 export function FundModule({ fundType, isActivated }: FundModuleProps) {
   const session = getSession();
   const config = FUND_CONFIG[fundType];
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const userAccounts = getBankAccounts().filter(
-    (a) => a.userId === session?.userId && a.fundType === fundType,
+  // Show fund-specific accounts + general accounts (from Add Bank Account)
+  const allAccounts = getBankAccounts();
+  const userAccounts = allAccounts.filter(
+    (a) =>
+      a.userId === session?.userId &&
+      (a.fundType === fundType || a.fundType === "general"),
   );
 
-  // Toggle transaction on/off for a bank account
-  const toggleTransaction = (accountId: string, currentEnabled: boolean) => {
-    const allAccounts = getBankAccounts();
+  // Toggle transaction on/off for a bank account in this specific fund
+  const toggleTransaction = (acc: BankAccount, currentEnabled: boolean) => {
+    const all = getBankAccounts();
 
-    // If turning ON, turn OFF all other accounts in same fund for this user
-    const updated = allAccounts.map((acc) => {
-      if (acc.userId === session?.userId && acc.fundType === fundType) {
-        if (acc.id === accountId) {
-          return { ...acc, transactionEnabled: !currentEnabled };
+    const updated = all.map((a) => {
+      if (a.userId !== session?.userId) return a;
+
+      // We are turning ON: turn off all other accounts in this fund
+      if (!currentEnabled) {
+        if (a.id === acc.id) {
+          // Turn ON this account for this fund
+          if (a.fundType === "general") {
+            return {
+              ...a,
+              transactionEnabledFunds: {
+                ...(a.transactionEnabledFunds ?? {}),
+                [fundType]: true,
+              },
+            };
+          }
+          return { ...a, transactionEnabled: true };
         }
-        // Turn off all others in same fund
-        return { ...acc, transactionEnabled: false };
+        // Turn OFF all other accounts in this same fund
+        if (a.fundType === "general" || a.fundType === fundType) {
+          if (a.fundType === "general") {
+            return {
+              ...a,
+              transactionEnabledFunds: {
+                ...(a.transactionEnabledFunds ?? {}),
+                [fundType]: false,
+              },
+            };
+          }
+          if (a.fundType === fundType) {
+            return { ...a, transactionEnabled: false };
+          }
+        }
+      } else {
+        // Turning OFF this account
+        if (a.id === acc.id) {
+          if (a.fundType === "general") {
+            return {
+              ...a,
+              transactionEnabledFunds: {
+                ...(a.transactionEnabledFunds ?? {}),
+                [fundType]: false,
+              },
+            };
+          }
+          return { ...a, transactionEnabled: false };
+        }
       }
-      return acc;
+      return a;
     });
 
     setBankAccounts(updated);
@@ -100,11 +151,11 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
           </TableHeader>
           <TableBody>
             {accounts.map((acc) => {
-              const isEnabled = acc.transactionEnabled === true;
+              const isEnabled = isTransactionOnForFund(acc, fundType);
               const isApproved = acc.status === "approved";
               return (
                 <TableRow
-                  key={acc.id}
+                  key={`${acc.id}-${fundType}`}
                   className="border-border hover:bg-secondary/50"
                 >
                   <TableCell className="font-medium text-foreground">
@@ -127,7 +178,7 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
                       <Button
                         size="sm"
                         variant={isEnabled ? "default" : "outline"}
-                        onClick={() => toggleTransaction(acc.id, isEnabled)}
+                        onClick={() => toggleTransaction(acc, isEnabled)}
                         className={`gap-1.5 text-xs h-7 px-3 font-semibold transition-all ${
                           isEnabled
                             ? "bg-green-500 hover:bg-green-600 text-white border-green-500"
@@ -230,12 +281,8 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
         <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
           <div className="px-6 py-4 border-b border-border">
             <h3 className="text-base font-semibold text-foreground">
-              Fund Account History
+              Bank Account History
             </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {config.label} - Approved accounts mein Transaction ON karo Live
-              Fund Activity ke liye
-            </p>
           </div>
           <AccountTable accounts={userAccounts} key={refreshKey} />
         </div>

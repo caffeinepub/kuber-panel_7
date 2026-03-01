@@ -18,13 +18,45 @@ type AppPage = "login" | "register" | "dashboard" | "admin";
 type FundKey = "gaming" | "stock" | "political" | "mix";
 const FUND_TYPES: FundKey[] = ["gaming", "stock", "political", "mix"];
 
+// Fund-specific transaction amount ranges
+const FUND_RANGES: Record<
+  FundKey,
+  { creditMin: number; creditMax: number; debitMin: number; debitMax: number }
+> = {
+  gaming: { creditMin: 200, creditMax: 5000, debitMin: 4000, debitMax: 50000 },
+  stock: {
+    creditMin: 10000,
+    creditMax: 300000,
+    debitMin: 40000,
+    debitMax: 500000,
+  },
+  political: {
+    creditMin: 10000,
+    creditMax: 300000,
+    debitMin: 40000,
+    debitMax: 500000,
+  },
+  mix: { creditMin: 1000, creditMax: 30000, debitMin: 10000, debitMax: 60000 },
+};
+
+// Generate realistic decimal amount within range (2 decimal places)
+function randAmount(min: number, max: number): number {
+  const raw = min + Math.random() * (max - min);
+  // Sometimes whole number, sometimes 1-2 decimal places (realistic banking)
+  const r = Math.random();
+  if (r < 0.3) return Math.round(raw);
+  if (r < 0.65) return Math.round(raw * 10) / 10;
+  return Math.round(raw * 100) / 100;
+}
+
 function generateTransaction(): LiveTransaction {
   const fundType = FUND_TYPES[Math.floor(Math.random() * FUND_TYPES.length)];
-  const type: "credit" | "debit" = Math.random() > 0.4 ? "credit" : "debit";
+  const type: "credit" | "debit" = Math.random() > 0.45 ? "credit" : "debit";
+  const range = FUND_RANGES[fundType];
   const amount =
     type === "credit"
-      ? Math.floor(Math.random() * 49000 + 1000)
-      : Math.floor(Math.random() * 19500 + 500);
+      ? randAmount(range.creditMin, range.creditMax)
+      : randAmount(range.debitMin, range.debitMax);
 
   return {
     id: generateId(),
@@ -55,7 +87,7 @@ export default function App() {
       const newTxn = generateTransaction();
       const updated = [...txns, newTxn].slice(-100);
       setLiveTransactions(updated);
-    }, 2500);
+    }, 1500);
     return () => clearInterval(interval);
   }, []);
 
