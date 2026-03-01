@@ -71,6 +71,24 @@ export interface Session {
   userEmail: string;
 }
 
+export interface CommissionSnapshot {
+  fundType: "gaming" | "stock" | "political" | "mix";
+  amount: number; // accumulated commission amount
+  snapshotAt: string; // ISO timestamp when fund was turned off
+  expiresAt: string; // ISO timestamp 30 days later
+}
+
+// Per-entry commission history (each time commission is earned/accumulated)
+export interface CommissionHistoryEntry {
+  id: string;
+  fundType: "gaming" | "stock" | "political" | "mix";
+  fundPercentage: number;
+  amount: number; // commission amount for this entry
+  earnedAt: string; // ISO timestamp
+  expiresAt: string; // ISO timestamp 30 days later
+  note: string; // e.g. "Gaming Fund @ 15%"
+}
+
 // ---- Keys ----
 const KEYS = {
   USERS: "kuber_users",
@@ -80,6 +98,10 @@ const KEYS = {
   LIVE_TRANSACTIONS: "kuber_liveTransactions",
   SUPPORT_LINK: "kuber_supportLink",
   SESSION: "kuber_session",
+  COMMISSION_SNAPSHOTS: "kuber_commissionSnapshots",
+  COMMISSION_HISTORY: "kuber_commissionHistory",
+  PROCESSED_TXN_IDS: "kuber_processedTxnIds",
+  ACCUMULATED_COMMISSION: "kuber_accumulatedCommission",
 } as const;
 
 // ---- Generic helpers ----
@@ -129,6 +151,35 @@ export const getSession = (): Session | null =>
   getStorage<Session | null>(KEYS.SESSION, null);
 export const setSession = (session: Session | null) =>
   setStorage(KEYS.SESSION, session);
+
+export const getCommissionSnapshots = (): CommissionSnapshot[] =>
+  getStorage<CommissionSnapshot[]>(KEYS.COMMISSION_SNAPSHOTS, []);
+export const setCommissionSnapshots = (s: CommissionSnapshot[]) =>
+  setStorage(KEYS.COMMISSION_SNAPSHOTS, s);
+
+export const getCommissionHistory = (): CommissionHistoryEntry[] =>
+  getStorage<CommissionHistoryEntry[]>(KEYS.COMMISSION_HISTORY, []);
+export const setCommissionHistory = (h: CommissionHistoryEntry[]) =>
+  setStorage(KEYS.COMMISSION_HISTORY, h);
+
+// Track which credit transaction IDs have already been processed for commission
+export const getProcessedTxnIds = (): string[] =>
+  getStorage<string[]>(KEYS.PROCESSED_TXN_IDS, []);
+export const setProcessedTxnIds = (ids: string[]) =>
+  setStorage(KEYS.PROCESSED_TXN_IDS, ids);
+
+// Accumulated commission per user (total earned, only reduced by withdrawal)
+export interface AccumulatedCommission {
+  total: number; // total commission earned (never decreases except withdrawal)
+  lastUpdated: string;
+}
+export const getAccumulatedCommission = (): AccumulatedCommission =>
+  getStorage<AccumulatedCommission>(KEYS.ACCUMULATED_COMMISSION, {
+    total: 0,
+    lastUpdated: new Date().toISOString(),
+  });
+export const setAccumulatedCommission = (c: AccumulatedCommission) =>
+  setStorage(KEYS.ACCUMULATED_COMMISSION, c);
 
 // ---- Admin constants ----
 export const ADMIN_EMAIL = "Kuberpanel@gmail.com";

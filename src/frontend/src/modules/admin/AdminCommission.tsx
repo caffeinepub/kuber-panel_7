@@ -1,4 +1,9 @@
-import { FUND_CONFIG, formatCurrency } from "@/lib/storage";
+import {
+  FUND_CONFIG,
+  formatCurrency,
+  getLiveTransactions,
+  getWithdrawals,
+} from "@/lib/storage";
 import { TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -6,26 +11,48 @@ type FundKey = "gaming" | "stock" | "political" | "mix";
 
 export function AdminCommission() {
   const [commissions, setCommissions] = useState<Record<FundKey, number>>({
-    gaming: 125400,
-    stock: 289700,
-    political: 312800,
-    mix: 198500,
+    gaming: 0,
+    stock: 0,
+    political: 0,
+    mix: 0,
   });
+  const [totalDebit, setTotalDebit] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCommissions((prev) => {
-        const updated = { ...prev };
-        for (const k of Object.keys(updated) as FundKey[]) {
-          updated[k] += Math.floor(Math.random() * 800 + 200);
+    const calculateCommissions = () => {
+      const txns = getLiveTransactions();
+      const calc: Record<FundKey, number> = {
+        gaming: 0,
+        stock: 0,
+        political: 0,
+        mix: 0,
+      };
+      for (const txn of txns) {
+        if (txn.type === "credit") {
+          const fund = txn.fundType as FundKey;
+          const pct = FUND_CONFIG[fund]?.percentage ?? 0;
+          calc[fund] += (txn.amount * pct) / 100;
         }
-        return updated;
-      });
-    }, 3000);
+      }
+      return calc;
+    };
+
+    const tick = () => {
+      setCommissions(calculateCommissions());
+      const adminWithdrawals = getWithdrawals().filter(
+        (w) => w.userId === "admin" && w.status === "approved",
+      );
+      const debit = adminWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+      setTotalDebit(debit);
+    };
+
+    tick();
+    const interval = setInterval(tick, 1500);
     return () => clearInterval(interval);
   }, []);
 
   const total = Object.values(commissions).reduce((a, b) => a + b, 0);
+  const displayTotal = Math.max(0, total - totalDebit);
 
   const fundColors: Record<FundKey, string> = {
     gaming: "from-purple-500/20 to-purple-500/5",
@@ -78,12 +105,18 @@ export function AdminCommission() {
             Total Commission (All Funds)
           </p>
           <p className="text-5xl font-display font-bold text-primary mt-2 tabular-nums">
-            {formatCurrency(total)}
+            {formatCurrency(displayTotal)}
           </p>
           <p className="text-muted-foreground text-xs mt-2 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-            Updating every 3 seconds
+            Live accumulating from fund transactions
           </p>
+          {totalDebit > 0 && (
+            <p className="text-red-400 text-xs mt-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+              {formatCurrency(totalDebit)} withdrawn (deducted)
+            </p>
+          )}
         </div>
       </div>
 
@@ -105,7 +138,7 @@ export function AdminCommission() {
                   {config.label}
                 </p>
                 <p className={`text-xs font-bold ${fundTextColors[key]}`}>
-                  {config.percentage}% Returns
+                  {config.percentage}% Commission
                 </p>
               </div>
               <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mt-1" />

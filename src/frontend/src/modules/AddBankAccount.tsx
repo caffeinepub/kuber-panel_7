@@ -112,8 +112,9 @@ export function AddBankAccount() {
             Bank Account History
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Ye accounts saare fund modules mein bhi dikhenge. Fund module mein
-            jaake Transaction ON karo.
+            Ye accounts saare Fund Options mein bhi dikhenge. Koi bhi Fund
+            option mein jaake ON/OFF karo - Aapka Bank Account ussi fund mein
+            live run hoga.
           </p>
         </div>
         <AccountTable accounts={userAccounts} key={refreshKey} />

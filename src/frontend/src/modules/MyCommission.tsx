@@ -7,13 +7,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  type CommissionHistoryEntry,
   FUND_CONFIG,
   formatCurrency,
+  getAccumulatedCommission,
   getBankAccounts,
+  getCommissionHistory,
+  getLiveTransactions,
+  getProcessedTxnIds,
   getSession,
+  getWithdrawals,
+  setAccumulatedCommission,
+  setCommissionHistory,
+  setProcessedTxnIds,
 } from "@/lib/storage";
-import { ArrowDownToLine, Lock, TrendingUp } from "lucide-react";
+import { ArrowDownToLine, Clock, Lock, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface MyCommissionProps {
@@ -23,10 +33,61 @@ interface MyCommissionProps {
 
 type FundKey = "gaming" | "stock" | "political" | "mix";
 
+function getActiveFund(userId: string): FundKey | null {
+  const all = getBankAccounts();
+  const fundSpecific = all.find(
+    (a) =>
+      a.userId === userId &&
+      a.status === "approved" &&
+      a.transactionEnabled === true &&
+      a.fundType !== "general",
+  );
+  if (fundSpecific) return fundSpecific.fundType as FundKey;
+
+  const funds: FundKey[] = ["gaming", "stock", "political", "mix"];
+  for (const fund of funds) {
+    const g = all.find(
+      (a) =>
+        a.userId === userId &&
+        a.status === "approved" &&
+        a.fundType === "general" &&
+        a.transactionEnabledFunds?.[fund] === true,
+    );
+    if (g) return fund;
+  }
+  return null;
+}
+
+function formatDateTime(iso: string): { date: string; time: string } {
+  try {
+    const d = new Date(iso);
+    return {
+      date: d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      time: d.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }),
+    };
+  } catch {
+    return { date: "—", time: "—" };
+  }
+}
+
 export function MyCommission({ isActivated, onWithdraw }: MyCommissionProps) {
   const session = getSession();
 
-  const [commissions, setCommissions] = useState<Record<FundKey, number>>({
+  const [activeFund, setActiveFund] = useState<FundKey | null>(null);
+  const [totalCommission, setTotalCommission] = useState(0);
+  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
+  const [commissionHistory, setCommissionHistoryState] = useState<
+    CommissionHistoryEntry[]
+  >([]);
+  const [fundTotals, setFundTotals] = useState<Record<FundKey, number>>({
     gaming: 0,
     stock: 0,
     political: 0,
@@ -36,50 +97,104 @@ export function MyCommission({ isActivated, onWithdraw }: MyCommissionProps) {
   useEffect(() => {
     if (!session || !isActivated) return;
 
-    const accounts = getBankAccounts().filter(
-      (a) => a.userId === session.userId && a.status === "approved",
-    );
+    const tick = () => {
+      const currentFund = getActiveFund(session.userId);
+      setActiveFund(currentFund);
 
-    // Initialize commissions based on approved accounts
-    const initial: Record<FundKey, number> = {
-      gaming: 0,
-      stock: 0,
-      political: 0,
-      mix: 0,
+      // Process new credit transactions for commission
+      if (currentFund) {
+        const allTxns = getLiveTransactions();
+        const processedIds = getProcessedTxnIds();
+        const processedSet = new Set(processedIds);
+
+        // Only look at credit transactions for the active fund
+        const newCreditTxns = allTxns.filter(
+          (t) =>
+            t.type === "credit" &&
+            t.fundType === currentFund &&
+            !processedSet.has(t.id),
+        );
+
+        if (newCreditTxns.length > 0) {
+          const now = new Date();
+          const expiresAt = new Date(now);
+          expiresAt.setDate(expiresAt.getDate() + 30);
+
+          const history = getCommissionHistory();
+          let newTotal = 0;
+
+          for (const txn of newCreditTxns) {
+            const commissionRate = FUND_CONFIG[currentFund].percentage;
+            const commissionAmount = (txn.amount * commissionRate) / 100;
+            newTotal += commissionAmount;
+
+            // Add history entry for each credit transaction
+            history.push({
+              id: `${txn.id}_comm`,
+              fundType: currentFund,
+              fundPercentage: commissionRate,
+              amount: commissionAmount,
+              earnedAt: txn.timestamp,
+              expiresAt: expiresAt.toISOString(),
+              note: `${FUND_CONFIG[currentFund].label} @ ${commissionRate}% on ${formatCurrency(txn.amount)}`,
+            });
+
+            processedSet.add(txn.id);
+          }
+
+          if (newTotal > 0) {
+            // Update accumulated total (never decreases here)
+            const acc = getAccumulatedCommission();
+            acc.total += newTotal;
+            acc.lastUpdated = now.toISOString();
+            setAccumulatedCommission(acc);
+
+            // Save history
+            setCommissionHistory(history);
+            setProcessedTxnIds([...processedSet]);
+          }
+        }
+      }
+
+      // Calculate display values
+      const acc = getAccumulatedCommission();
+
+      // User withdrawals debit
+      const userWithdrawals = getWithdrawals().filter(
+        (w) => w.userId === session.userId && w.status === "approved",
+      );
+      const withdrawn = userWithdrawals.reduce((sum, w) => sum + w.amount, 0);
+      setTotalWithdrawn(withdrawn);
+
+      // Net commission = accumulated - withdrawn (never below 0)
+      setTotalCommission(Math.max(0, acc.total - withdrawn));
+
+      // Fund-wise totals from history (last 30 days)
+      const nowMs = Date.now();
+      const validHistory = getCommissionHistory().filter(
+        (h) => new Date(h.expiresAt).getTime() > nowMs,
+      );
+      const byFund: Record<FundKey, number> = {
+        gaming: 0,
+        stock: 0,
+        political: 0,
+        mix: 0,
+      };
+      for (const entry of validHistory) {
+        byFund[entry.fundType as FundKey] += entry.amount;
+      }
+      setFundTotals(byFund);
+
+      // Commission history for display (sorted newest first, 30 days)
+      setCommissionHistoryState(validHistory.slice().reverse());
     };
 
-    for (const acc of accounts) {
-      if (acc.fundType !== "general") {
-        const fund = acc.fundType as FundKey;
-        initial[fund] += Math.floor(Math.random() * 4500 + 500);
-      }
-    }
-
-    // Add some defaults for demo purposes
-    if (Object.values(initial).every((v) => v === 0)) {
-      initial.gaming = Math.floor(Math.random() * 2000 + 800);
-      initial.stock = Math.floor(Math.random() * 3000 + 1200);
-      initial.political = Math.floor(Math.random() * 2500 + 900);
-      initial.mix = Math.floor(Math.random() * 1500 + 600);
-    }
-
-    setCommissions(initial);
-
-    // Incrementally update commissions
-    const interval = setInterval(() => {
-      setCommissions((prev) => {
-        const updated = { ...prev };
-        for (const k of Object.keys(updated) as FundKey[]) {
-          updated[k] += Math.floor(Math.random() * 150);
-        }
-        return updated;
-      });
-    }, 5000);
-
+    tick();
+    const interval = setInterval(tick, 1500);
     return () => clearInterval(interval);
   }, [session, isActivated]);
 
-  const totalCommission = Object.values(commissions).reduce((a, b) => a + b, 0);
+  const isLive = activeFund !== null;
 
   return (
     <div className="relative space-y-6 animate-fade-in-up">
@@ -135,69 +250,204 @@ export function MyCommission({ isActivated, onWithdraw }: MyCommissionProps) {
               {formatCurrency(totalCommission)}
             </p>
             <p className="text-muted-foreground text-xs mt-2 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
-              Live accumulating
+              {isLive ? (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse inline-block" />
+                  Live Calculation — {FUND_CONFIG[activeFund!].label} is active
+                </>
+              ) : (
+                <>
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+                  Commission preserved — no fund active
+                </>
+              )}
             </p>
+            {totalWithdrawn > 0 && (
+              <p className="text-red-400 text-xs mt-1 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
+                {formatCurrency(totalWithdrawn)} withdrawn (deducted)
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Per-fund table */}
-        <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
-          <div className="px-6 py-4 border-b border-border">
-            <h3 className="text-base font-semibold text-foreground">
-              Fund-wise Breakdown
-            </h3>
-          </div>
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border hover:bg-transparent">
-                  <TableHead className="text-muted-foreground">
-                    Fund Name
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Fund %
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Commission
-                  </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Status
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(
-                  Object.entries(FUND_CONFIG) as [
-                    FundKey,
-                    (typeof FUND_CONFIG)[FundKey],
-                  ][]
-                ).map(([key, config]) => (
-                  <TableRow
-                    key={key}
-                    className="border-border hover:bg-secondary/50"
-                  >
-                    <TableCell className="font-medium text-foreground">
-                      {config.label}
-                    </TableCell>
-                    <TableCell className="text-primary font-bold">
-                      {config.percentage}%
-                    </TableCell>
-                    <TableCell className="font-semibold text-foreground tabular-nums">
-                      {formatCurrency(commissions[key])}
-                    </TableCell>
-                    <TableCell>
-                      <span className="status-approved inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                        <span className="w-1.5 h-1.5 rounded-full bg-current inline-block animate-pulse" />
-                        Active
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+        <Tabs defaultValue="breakdown" className="w-full">
+          <TabsList className="grid grid-cols-2 bg-secondary w-full mb-4">
+            <TabsTrigger
+              value="breakdown"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Fund Breakdown
+            </TabsTrigger>
+            <TabsTrigger
+              value="history"
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              Commission History
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Fund Breakdown Tab */}
+          <TabsContent value="breakdown">
+            <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
+              <div className="px-6 py-4 border-b border-border">
+                <h3 className="text-base font-semibold text-foreground">
+                  Fund-wise Breakdown
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border hover:bg-transparent">
+                      <TableHead className="text-muted-foreground">
+                        Fund Name
+                      </TableHead>
+                      <TableHead className="text-muted-foreground">
+                        Fund %
+                      </TableHead>
+                      <TableHead className="text-muted-foreground">
+                        Commission
+                      </TableHead>
+                      <TableHead className="text-muted-foreground">
+                        Status
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(
+                      Object.entries(FUND_CONFIG) as [
+                        FundKey,
+                        (typeof FUND_CONFIG)[FundKey],
+                      ][]
+                    ).map(([key, config]) => {
+                      const isActive = key === activeFund;
+                      const fundAmount = fundTotals[key] ?? 0;
+                      return (
+                        <TableRow
+                          key={key}
+                          className="border-border hover:bg-secondary/50"
+                        >
+                          <TableCell className="font-medium text-foreground">
+                            {config.label}
+                          </TableCell>
+                          <TableCell className="text-primary font-bold">
+                            {config.percentage}%
+                          </TableCell>
+                          <TableCell className="font-semibold text-foreground tabular-nums">
+                            {formatCurrency(fundAmount)}
+                          </TableCell>
+                          <TableCell>
+                            {isActive ? (
+                              <span className="status-approved inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-current inline-block animate-pulse" />
+                                Active
+                              </span>
+                            ) : fundAmount > 0 ? (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-current inline-block" />
+                                Saved
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-muted text-muted-foreground">
+                                <span className="w-1.5 h-1.5 rounded-full bg-current inline-block" />
+                                Inactive
+                              </span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Commission History Tab */}
+          <TabsContent value="history">
+            <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
+              <div className="px-6 py-4 border-b border-border flex items-center gap-2">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <h3 className="text-base font-semibold text-foreground">
+                  Commission History
+                </h3>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  Last 30 days
+                </span>
+              </div>
+
+              {commissionHistory.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No commission history yet.</p>
+                  <p className="text-xs mt-1 opacity-70">
+                    Entries appear here when credit transactions happen on
+                    active fund.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border hover:bg-transparent">
+                        <TableHead className="text-muted-foreground">
+                          Fund
+                        </TableHead>
+                        <TableHead className="text-muted-foreground">
+                          Rate
+                        </TableHead>
+                        <TableHead className="text-muted-foreground">
+                          Commission
+                        </TableHead>
+                        <TableHead className="text-muted-foreground">
+                          Date
+                        </TableHead>
+                        <TableHead className="text-muted-foreground">
+                          Time
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {commissionHistory.map((entry) => {
+                        const { date, time } = formatDateTime(entry.earnedAt);
+                        return (
+                          <TableRow
+                            key={entry.id}
+                            className="border-border hover:bg-secondary/50"
+                          >
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`w-2 h-2 rounded-full inline-block ${FUND_CONFIG[entry.fundType as FundKey]?.color ?? "bg-primary"}`}
+                                />
+                                <span className="font-medium text-foreground text-sm">
+                                  {FUND_CONFIG[entry.fundType as FundKey]
+                                    ?.label ?? entry.fundType}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-primary font-bold text-sm">
+                              {entry.fundPercentage}%
+                            </TableCell>
+                            <TableCell className="font-semibold text-green-400 tabular-nums text-sm">
+                              +{formatCurrency(entry.amount)}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {date}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              {time}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export function KuberLogo({ size = 120, className = "" }: KuberLogoProps) {
     <svg
       width={size}
       height={size}
-      viewBox="0 0 200 200"
+      viewBox="0 0 240 240"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
@@ -16,253 +16,319 @@ export function KuberLogo({ size = 120, className = "" }: KuberLogoProps) {
       role="img"
     >
       <defs>
-        {/* Silver outer ring gradient */}
-        <linearGradient id="silverRing1" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ffffff" />
-          <stop offset="20%" stopColor="#c8c8c8" />
-          <stop offset="40%" stopColor="#e8e8e8" />
-          <stop offset="60%" stopColor="#a0a0a0" />
-          <stop offset="80%" stopColor="#d4d4d4" />
-          <stop offset="100%" stopColor="#ffffff" />
-        </linearGradient>
+        {/* Deep black-gold radial bg */}
+        <radialGradient id="kp-bg" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stopColor="#1a1200" />
+          <stop offset="100%" stopColor="#000000" />
+        </radialGradient>
 
-        {/* Silver inner ring gradient */}
-        <linearGradient id="silverRing2" x1="100%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#e0e0e0" />
-          <stop offset="25%" stopColor="#b0b0b0" />
-          <stop offset="50%" stopColor="#f0f0f0" />
-          <stop offset="75%" stopColor="#909090" />
-          <stop offset="100%" stopColor="#e0e0e0" />
-        </linearGradient>
-
-        {/* Dark navy background */}
-        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#0a1628" />
-          <stop offset="100%" stopColor="#050e1a" />
-        </linearGradient>
-
-        {/* Gold fill for crown and K */}
-        <linearGradient id="goldFill" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#ffe680" />
-          <stop offset="35%" stopColor="#ffd700" />
-          <stop offset="65%" stopColor="#d4a017" />
+        {/* Premium gold gradient */}
+        <linearGradient id="kp-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fff0a0" />
+          <stop offset="20%" stopColor="#ffd700" />
+          <stop offset="50%" stopColor="#c8920a" />
+          <stop offset="80%" stopColor="#ffd700" />
           <stop offset="100%" stopColor="#b8860b" />
         </linearGradient>
 
-        {/* Gold ring accent */}
-        <linearGradient id="goldAccent" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#f5d060" />
-          <stop offset="50%" stopColor="#d4a017" />
-          <stop offset="100%" stopColor="#f5d060" />
+        {/* Bright gold for accents */}
+        <linearGradient id="kp-gold2" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#ffe566" />
+          <stop offset="50%" stopColor="#ffd700" />
+          <stop offset="100%" stopColor="#d4a012" />
         </linearGradient>
 
-        {/* Glow center */}
-        <radialGradient id="glowCenter" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#d4a017" stopOpacity="0.2" />
-          <stop offset="100%" stopColor="#d4a017" stopOpacity="0" />
-        </radialGradient>
+        {/* Outer ring - platinum/chrome */}
+        <linearGradient id="kp-chrome" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="15%" stopColor="#c0c0c0" />
+          <stop offset="30%" stopColor="#f8f8f8" />
+          <stop offset="50%" stopColor="#888888" />
+          <stop offset="70%" stopColor="#e0e0e0" />
+          <stop offset="85%" stopColor="#a0a0a0" />
+          <stop offset="100%" stopColor="#ffffff" />
+        </linearGradient>
 
-        {/* Silver shine radial */}
-        <radialGradient id="silverShine" cx="35%" cy="30%" r="60%">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.4" />
+        {/* Middle ring - dark gold */}
+        <linearGradient id="kp-darkgold" x1="100%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#c8920a" />
+          <stop offset="30%" stopColor="#ffd700" />
+          <stop offset="60%" stopColor="#b8860b" />
+          <stop offset="100%" stopColor="#ffd700" />
+        </linearGradient>
+
+        {/* Inner ring - deep gold */}
+        <linearGradient id="kp-ring3" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#a07000" />
+          <stop offset="40%" stopColor="#ffd700" />
+          <stop offset="100%" stopColor="#c8920a" />
+        </linearGradient>
+
+        {/* K letter gradient */}
+        <linearGradient id="kp-k" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#fff5b0" />
+          <stop offset="40%" stopColor="#ffd700" />
+          <stop offset="100%" stopColor="#c8920a" />
+        </linearGradient>
+
+        {/* Glow filters */}
+        <filter id="kp-glow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <filter id="kp-strongglow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="5" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        <filter id="kp-textglow" x="-10%" y="-10%" width="120%" height="120%">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+
+        {/* Shine overlay */}
+        <radialGradient id="kp-shine" cx="35%" cy="25%" r="55%">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.18" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
 
-        <filter id="glow">
-          <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-
-        <filter id="softGlow">
-          <feGaussianBlur stdDeviation="1.5" result="coloredBlur" />
-          <feMerge>
-            <feMergeNode in="coloredBlur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
+        {/* Inner glow */}
+        <radialGradient id="kp-innerGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffd700" stopOpacity="0.12" />
+          <stop offset="70%" stopColor="#ffd700" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#ffd700" stopOpacity="0" />
+        </radialGradient>
       </defs>
 
-      {/* === OUTER SILVER RING 1 (outermost) === */}
-      <circle cx="100" cy="100" r="99" fill="url(#silverRing1)" />
+      {/* === RING 1: Platinum/Chrome outer (largest) === */}
+      <circle cx="120" cy="120" r="118" fill="url(#kp-chrome)" />
 
-      {/* Gap between rings - dark */}
-      <circle cx="100" cy="100" r="94" fill="#111827" />
+      {/* Gap 1 */}
+      <circle cx="120" cy="120" r="112" fill="#050505" />
 
-      {/* === INNER SILVER RING 2 === */}
-      <circle cx="100" cy="100" r="91" fill="url(#silverRing2)" />
+      {/* === RING 2: Gold ring === */}
+      <circle cx="120" cy="120" r="109" fill="url(#kp-darkgold)" />
 
-      {/* Silver shine overlay on ring 2 */}
-      <circle cx="100" cy="100" r="91" fill="url(#silverShine)" />
+      {/* Gap 2 */}
+      <circle cx="120" cy="120" r="104" fill="#080808" />
 
-      {/* Main dark background inside */}
-      <circle cx="100" cy="100" r="86" fill="url(#bgGrad)" />
+      {/* === RING 3: Thin gold inner ring === */}
+      <circle cx="120" cy="120" r="101" fill="url(#kp-ring3)" />
 
-      {/* Glow overlay */}
-      <circle cx="100" cy="100" r="86" fill="url(#glowCenter)" />
+      {/* Main body background */}
+      <circle cx="120" cy="120" r="97" fill="url(#kp-bg)" />
 
-      {/* Thin gold accent ring inside */}
-      <circle
-        cx="100"
-        cy="100"
-        r="82"
-        fill="none"
-        stroke="url(#goldAccent)"
-        strokeWidth="1"
-        opacity="0.5"
-      />
+      {/* Inner glow overlay */}
+      <circle cx="120" cy="120" r="97" fill="url(#kp-innerGlow)" />
 
-      {/* === CROWN === */}
-      {/* Left crown point */}
-      <polygon
-        points="55,75 61,54 70,70"
-        fill="url(#goldFill)"
-        filter="url(#glow)"
-      />
-      {/* Center crown point (tallest) */}
-      <polygon
-        points="87,70 100,44 113,70"
-        fill="url(#goldFill)"
-        filter="url(#glow)"
-      />
-      {/* Right crown point */}
-      <polygon
-        points="130,70 139,54 145,75"
-        fill="url(#goldFill)"
-        filter="url(#glow)"
-      />
+      {/* Shine overlay */}
+      <circle cx="120" cy="120" r="97" fill="url(#kp-shine)" />
 
-      {/* Crown body */}
+      {/* === DECORATIVE: 8 diamond dots on outer circle === */}
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle) => {
+        const rad = (angle * Math.PI) / 180;
+        const cx = 120 + 110 * Math.sin(rad);
+        const cy = 120 - 110 * Math.cos(rad);
+        return (
+          <circle
+            key={angle}
+            cx={cx}
+            cy={cy}
+            r={angle % 90 === 0 ? 3.5 : 2.2}
+            fill="url(#kp-gold)"
+            filter="url(#kp-glow)"
+            opacity="0.9"
+          />
+        );
+      })}
+
+      {/* === CROWN: Premium 5-point crown === */}
+      {/* Crown base */}
       <path
-        d="M51 75 L55 75 L70 70 L87 70 L100 44 L113 70 L130 70 L145 75 L149 75 L149 93 Q149 98 143 98 L57 98 Q51 98 51 93 Z"
-        fill="url(#goldFill)"
-        filter="url(#glow)"
+        d="M 68 100 L 68 87 L 84 96 L 100 62 L 120 78 L 140 62 L 156 96 L 172 87 L 172 100 Q 172 108 164 108 L 76 108 Q 68 108 68 100 Z"
+        fill="url(#kp-gold)"
+        filter="url(#kp-strongglow)"
       />
 
-      {/* Crown base bar */}
+      {/* Crown base bottom bar */}
       <rect
-        x="49"
-        y="91"
-        width="102"
-        height="10"
-        rx="3"
-        fill="url(#goldFill)"
+        x="66"
+        y="104"
+        width="108"
+        height="11"
+        rx="4"
+        fill="url(#kp-gold2)"
+        filter="url(#kp-glow)"
       />
 
-      {/* Crown gems */}
-      <circle
-        cx="100"
-        cy="81"
-        r="5"
-        fill="#050e1a"
-        stroke="url(#goldAccent)"
-        strokeWidth="1.5"
+      {/* Crown gems - 3 jewels */}
+      <ellipse cx="120" cy="94" rx="6" ry="5.5" fill="#0a0a0a" />
+      <ellipse
+        cx="120"
+        cy="94"
+        rx="4"
+        ry="3.5"
+        fill="#1a0a00"
+        stroke="url(#kp-gold)"
+        strokeWidth="1"
       />
+      <circle cx="120" cy="94" r="2" fill="#ffd700" opacity="0.6" />
+
+      <ellipse cx="95" cy="91" rx="4.5" ry="4" fill="#0a0a0a" />
       <circle
-        cx="75"
-        cy="79"
-        r="3.5"
-        fill="#050e1a"
-        stroke="url(#goldAccent)"
-        strokeWidth="1.2"
-      />
-      <circle
-        cx="125"
-        cy="79"
-        r="3.5"
-        fill="#050e1a"
-        stroke="url(#goldAccent)"
-        strokeWidth="1.2"
+        cx="95"
+        cy="91"
+        r="2.2"
+        fill="#1a0a00"
+        stroke="url(#kp-gold)"
+        strokeWidth="0.8"
       />
 
-      {/* Crown tip stars */}
+      <ellipse cx="145" cy="91" rx="4.5" ry="4" fill="#0a0a0a" />
       <circle
-        cx="61"
-        cy="52"
-        r="2.5"
-        fill="url(#goldFill)"
-        opacity="0.95"
-        filter="url(#glow)"
+        cx="145"
+        cy="91"
+        r="2.2"
+        fill="#1a0a00"
+        stroke="url(#kp-gold)"
+        strokeWidth="0.8"
       />
+
+      {/* Crown point stars/circles */}
       <circle
-        cx="100"
-        cy="42"
+        cx="84"
+        cy="95"
         r="3"
-        fill="url(#goldFill)"
-        opacity="0.95"
-        filter="url(#glow)"
+        fill="url(#kp-gold)"
+        filter="url(#kp-glow)"
       />
       <circle
-        cx="139"
-        cy="52"
-        r="2.5"
-        fill="url(#goldFill)"
-        opacity="0.95"
-        filter="url(#glow)"
+        cx="100"
+        cy="61"
+        r="3.5"
+        fill="url(#kp-gold)"
+        filter="url(#kp-glow)"
+      />
+      <circle
+        cx="120"
+        cy="77"
+        r="3"
+        fill="url(#kp-gold)"
+        filter="url(#kp-glow)"
+      />
+      <circle
+        cx="140"
+        cy="61"
+        r="3.5"
+        fill="url(#kp-gold)"
+        filter="url(#kp-glow)"
+      />
+      <circle
+        cx="156"
+        cy="95"
+        r="3"
+        fill="url(#kp-gold)"
+        filter="url(#kp-glow)"
       />
 
-      {/* === K Letter === */}
+      {/* === BIG K LETTER === */}
       <text
-        x="100"
-        y="150"
+        x="120"
+        y="163"
         textAnchor="middle"
-        fontFamily="Georgia, 'Times New Roman', serif"
-        fontSize="52"
-        fontWeight="bold"
-        fill="url(#goldFill)"
-        filter="url(#glow)"
+        fontFamily="'Georgia', 'Times New Roman', serif"
+        fontSize="58"
+        fontWeight="900"
+        fill="url(#kp-k)"
+        filter="url(#kp-strongglow)"
+        letterSpacing="-2"
       >
         K
       </text>
 
-      {/* Divider line under K */}
+      {/* Divider line */}
       <line
-        x1="58"
-        y1="157"
-        x2="142"
-        y2="157"
-        stroke="url(#goldAccent)"
-        strokeWidth="1"
-        opacity="0.6"
+        x1="68"
+        y1="170"
+        x2="172"
+        y2="170"
+        stroke="url(#kp-gold)"
+        strokeWidth="1.2"
+        opacity="0.7"
+      />
+
+      {/* Small diamond left */}
+      <polygon
+        points="72,170 75,166 78,170 75,174"
+        fill="url(#kp-gold)"
+        opacity="0.8"
+        filter="url(#kp-glow)"
+      />
+      {/* Small diamond right */}
+      <polygon
+        points="162,170 165,166 168,170 165,174"
+        fill="url(#kp-gold)"
+        opacity="0.8"
+        filter="url(#kp-glow)"
       />
 
       {/* KUBER PANEL text */}
       <text
-        x="100"
-        y="171"
+        x="120"
+        y="186"
         textAnchor="middle"
-        fontFamily="Arial, Helvetica, sans-serif"
-        fontSize="10.5"
-        fontWeight="bold"
-        letterSpacing="3"
-        fill="url(#goldFill)"
+        fontFamily="'Arial', 'Helvetica', sans-serif"
+        fontSize="11"
+        fontWeight="700"
+        letterSpacing="4.5"
+        fill="url(#kp-gold2)"
+        filter="url(#kp-textglow)"
       >
         KUBER PANEL
       </text>
 
-      {/* Decorative dots */}
-      <circle cx="54" cy="167" r="1.8" fill="url(#goldFill)" opacity="0.7" />
-      <circle cx="146" cy="167" r="1.8" fill="url(#goldFill)" opacity="0.7" />
+      {/* Tagline */}
+      <text
+        x="120"
+        y="200"
+        textAnchor="middle"
+        fontFamily="'Arial', 'Helvetica', sans-serif"
+        fontSize="7"
+        fontWeight="400"
+        letterSpacing="2.5"
+        fill="#c8920a"
+        opacity="0.8"
+      >
+        FINANCIAL PLATFORM
+      </text>
 
-      {/* Silver ring shine highlights - top arc */}
+      {/* Chrome ring shine arc (top-left) */}
       <path
-        d="M 30 55 A 75 75 0 0 1 110 22"
+        d="M 28 80 A 100 100 0 0 1 110 22"
         fill="none"
         stroke="white"
-        strokeWidth="3"
+        strokeWidth="3.5"
         strokeLinecap="round"
-        opacity="0.35"
+        opacity="0.4"
       />
-      {/* Outer ring top highlight */}
+      {/* Outer ring shine */}
       <path
-        d="M 25 65 A 82 82 0 0 1 105 18"
+        d="M 15 90 A 112 112 0 0 1 115 10"
         fill="none"
         stroke="white"
         strokeWidth="2"
         strokeLinecap="round"
-        opacity="0.25"
+        opacity="0.2"
       />
     </svg>
   );

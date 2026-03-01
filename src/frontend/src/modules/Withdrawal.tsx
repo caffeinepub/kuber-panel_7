@@ -18,17 +18,63 @@ import {
   getWithdrawals,
   setWithdrawals,
 } from "@/lib/storage";
-import { ArrowDownToLine, Loader2, Lock } from "lucide-react";
-import { useState } from "react";
+import { ArrowDownToLine, CheckCircle2, Loader2, Lock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface WithdrawalProps {
   isActivated: boolean;
 }
 
+// Auto-approve pending withdrawals after 5-10 minutes
+function useAutoApproveWithdrawals(userId: string | undefined) {
+  const timerRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const checkAndSchedule = () => {
+      const withdrawals = getWithdrawals();
+      const pending = withdrawals.filter(
+        (w) => w.userId === userId && w.status === "pending",
+      );
+
+      for (const w of pending) {
+        if (!timerRef.current.has(w.id)) {
+          // Random delay between 5-10 minutes (300000-600000 ms)
+          const delay = Math.floor(Math.random() * 300000) + 300000;
+          const timer = setTimeout(() => {
+            const all = getWithdrawals();
+            const updated = all.map((item) =>
+              item.id === w.id
+                ? { ...item, status: "approved" as const }
+                : item,
+            );
+            setWithdrawals(updated);
+            timerRef.current.delete(w.id);
+          }, delay);
+          timerRef.current.set(w.id, timer);
+        }
+      }
+    };
+
+    checkAndSchedule();
+    const interval = setInterval(checkAndSchedule, 10000);
+    return () => {
+      clearInterval(interval);
+      for (const timer of timerRef.current.values()) {
+        clearTimeout(timer);
+      }
+    };
+  }, [userId]);
+}
+
 export function Withdrawal({ isActivated }: WithdrawalProps) {
   const session = getSession();
   const [loading, setLoading] = useState(false);
+  useAutoApproveWithdrawals(session?.userId);
 
   // UPI
   const [upiId, setUpiId] = useState("");
@@ -153,6 +199,14 @@ export function Withdrawal({ isActivated }: WithdrawalProps) {
               Request a withdrawal from your account
             </p>
           </div>
+        </div>
+
+        {/* Auto-approval notice */}
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+          <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+          <p className="text-xs text-green-400">
+            Withdrawal requests are automatically approved within 5-10 minutes.
+          </p>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 card-glow">

@@ -6,7 +6,15 @@ import {
   getLiveTransactions,
   getSession,
 } from "@/lib/storage";
-import { Activity, Lock, Power } from "lucide-react";
+import {
+  Activity,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Building2,
+  Lock,
+  Power,
+  Wifi,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 interface LiveActivityProps {
@@ -207,64 +215,107 @@ export function LiveActivity({ isActivated }: LiveActivityProps) {
               </div>
             </div>
 
-            {/* Transactions */}
+            {/* Transactions - Official Bank Statement Style */}
             <div className="bg-card border border-border rounded-xl overflow-hidden">
+              {/* Header bar */}
+              <div className="flex items-center justify-between px-4 py-3 bg-secondary/40 border-b border-border">
+                <div className="flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Account Statement
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Wifi
+                    className={`w-3 h-3 ${pulse ? "text-green-300" : "text-green-400"}`}
+                  />
+                  <span className="text-xs text-green-400 font-medium">
+                    LIVE
+                  </span>
+                </div>
+              </div>
+
               {transactions.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">Waiting for transactions...</p>
                 </div>
               ) : (
-                <div className="divide-y divide-border">
-                  {transactions.map((txn, i) => (
-                    <div
-                      key={txn.id}
-                      className={`flex items-center justify-between px-4 py-3 hover:bg-secondary/20 transition-colors ${i === 0 ? "animate-slide-in" : ""}`}
-                    >
-                      {/* Left: Icon + Fund + Time */}
-                      <div className="flex items-center gap-3 min-w-0">
+                <div className="divide-y divide-border/60">
+                  {transactions.map((txn, i) => {
+                    const isCredit = txn.type === "credit";
+                    const txnTime = new Date(txn.timestamp);
+                    const timeStr = txnTime.toLocaleTimeString("en-IN", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      second: "2-digit",
+                      hour12: true,
+                    });
+                    const dateStr = txnTime.toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                    });
+                    return (
+                      <div
+                        key={txn.id}
+                        className={`flex items-center gap-3 px-4 py-3.5 hover:bg-secondary/30 transition-colors ${i === 0 ? "animate-slide-in" : ""}`}
+                      >
+                        {/* Icon */}
                         <div
-                          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold
-                          ${txn.type === "credit" ? "bg-green-500/15 text-green-400" : "bg-red-500/15 text-red-400"}`}
+                          className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center shadow-sm
+                          ${
+                            isCredit
+                              ? "bg-emerald-500/15 border border-emerald-500/30"
+                              : "bg-red-500/15 border border-red-500/30"
+                          }`}
                         >
-                          {txn.type === "credit" ? "C" : "D"}
+                          {isCredit ? (
+                            <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
+                          ) : (
+                            <ArrowUpRight className="w-4 h-4 text-red-400" />
+                          )}
                         </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-foreground truncate">
-                            {txn.type === "credit"
-                              ? "Amount Credited"
-                              : "Amount Debited"}
+
+                        {/* Details */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground">
+                              {isCredit ? "Credit" : "Debit"}
+                            </p>
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide
+                              ${
+                                isCredit
+                                  ? "bg-emerald-500/15 text-emerald-400"
+                                  : "bg-red-500/15 text-red-400"
+                              }`}
+                            >
+                              {isCredit ? "CR" : "DR"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {getFundLabel(txn.fundType as FundKey)} &bull;{" "}
+                            {dateStr} &bull; {timeStr}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {getFundLabel(txn.fundType as FundKey)} &middot;{" "}
-                            {new Date(txn.timestamp).toLocaleTimeString(
-                              "en-IN",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                second: "2-digit",
-                                hour12: true,
-                              },
-                            )}
+                        </div>
+
+                        {/* Amount */}
+                        <div className="text-right flex-shrink-0">
+                          <p
+                            className={`font-bold tabular-nums text-sm leading-tight ${
+                              isCredit ? "text-emerald-400" : "text-red-400"
+                            }`}
+                          >
+                            {isCredit ? "+" : "-"}
+                            {formatCurrency(txn.amount)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground/60 mt-0.5 uppercase tracking-wide">
+                            {isCredit ? "Received" : "Sent"}
                           </p>
                         </div>
                       </div>
-                      {/* Right: Amount */}
-                      <div className="text-right flex-shrink-0 ml-3">
-                        <p
-                          className={`font-bold tabular-nums text-sm ${txn.type === "credit" ? "text-green-400" : "text-red-400"}`}
-                        >
-                          {txn.type === "credit" ? "+" : "-"}
-                          {formatCurrency(txn.amount)}
-                        </p>
-                        <p
-                          className={`text-xs font-medium mt-0.5 ${txn.type === "credit" ? "text-green-500/70" : "text-red-500/70"}`}
-                        >
-                          {txn.type === "credit" ? "CREDITED" : "DEBITED"}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -272,7 +323,7 @@ export function LiveActivity({ isActivated }: LiveActivityProps) {
         ) : (
           <div className="text-center py-12 text-muted-foreground">
             <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">Koi active fund account nahi mila</p>
+            <p className="text-sm">No Active Account</p>
           </div>
         )}
       </div>
