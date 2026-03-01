@@ -1,3 +1,4 @@
+import { KuberLogo } from "@/components/KuberLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,14 +40,15 @@ export function LoginPage({
 
     // Admin check
     if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+      const adminDisplayName = "Kuber";
       setSession({
         userId: "admin",
         isAdmin: true,
-        userName: "Administrator",
+        userName: adminDisplayName,
         userEmail: ADMIN_EMAIL,
       });
       setLoading(false);
-      onLoginSuccess(true, "Administrator");
+      onLoginSuccess(true, adminDisplayName);
       return;
     }
 
@@ -98,10 +100,9 @@ export function LoginPage({
           <div className="flex flex-col items-center mb-8 gap-2">
             <div className="relative flex items-center justify-center">
               <div className="absolute w-36 h-36 rounded-full bg-primary/15 blur-2xl animate-pulse-gold" />
-              <img
-                src="/assets/generated/kuber-panel-official-logo-transparent.dim_400x400.png"
-                alt="Kuber Panel Logo"
-                className="w-32 h-32 relative z-10 drop-shadow-[0_0_24px_oklch(0.82_0.18_85/0.7)]"
+              <KuberLogo
+                size={128}
+                className="relative z-10 drop-shadow-[0_0_24px_oklch(0.82_0.18_85/0.7)]"
               />
             </div>
           </div>

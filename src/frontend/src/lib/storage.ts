@@ -25,6 +25,7 @@ export interface BankAccount {
   fundType: "general" | "gaming" | "stock" | "political" | "mix";
   status: "pending" | "approved" | "rejected";
   submittedAt: string;
+  transactionEnabled?: boolean;
 }
 
 export interface ActivationCode {
@@ -56,6 +57,7 @@ export interface LiveTransaction {
   type: "credit" | "debit";
   amount: number;
   timestamp: string;
+  bankAccountId?: string;
 }
 
 export interface Session {

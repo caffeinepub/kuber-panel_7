@@ -1,3 +1,4 @@
+import { KuberLogo } from "@/components/KuberLogo";
 import { Button } from "@/components/ui/button";
 import { FUND_CONFIG, getSession, getUsers, setSession } from "@/lib/storage";
 import { ActivationPanel } from "@/modules/ActivationPanel";
@@ -85,7 +86,7 @@ const NAV_ITEMS = [
   },
   {
     id: "activity" as Module,
-    label: "Live Activity",
+    label: "Live Fund Activity",
     icon: Activity,
     requiresActivation: true,
   },
@@ -128,7 +129,7 @@ const MODULE_CARDS = [
     id: "gaming" as Module,
     label: "Gaming Fund",
     icon: Gamepad2,
-    desc: "15% returns",
+    desc: "15% commission",
     color: "from-purple-500/20 to-purple-500/5",
     border: "border-purple-500/30",
   },
@@ -136,7 +137,7 @@ const MODULE_CARDS = [
     id: "stock" as Module,
     label: "Stock Fund",
     icon: TrendingUp,
-    desc: "30% returns",
+    desc: "30% commission",
     color: "from-cyan-500/20 to-cyan-500/5",
     border: "border-cyan-500/30",
   },
@@ -144,7 +145,7 @@ const MODULE_CARDS = [
     id: "political" as Module,
     label: "Political Fund",
     icon: Landmark,
-    desc: "30% returns",
+    desc: "30% commission",
     color: "from-red-500/20 to-red-500/5",
     border: "border-red-500/30",
   },
@@ -152,7 +153,7 @@ const MODULE_CARDS = [
     id: "mix" as Module,
     label: "Mix Fund",
     icon: Shuffle,
-    desc: "25% returns",
+    desc: "25% commission",
     color: "from-green-500/20 to-green-500/5",
     border: "border-green-500/30",
   },
@@ -166,7 +167,7 @@ const MODULE_CARDS = [
   },
   {
     id: "activity" as Module,
-    label: "Live Activity",
+    label: "Live Fund Activity",
     icon: Activity,
     desc: "Real-time transactions",
     color: "from-emerald-500/20 to-emerald-500/5",
@@ -301,10 +302,9 @@ export function Dashboard({ onLogout }: DashboardProps) {
         {/* Logo area */}
         <div className="p-4 border-b border-sidebar-border">
           <div className="flex items-center gap-3">
-            <img
-              src="/assets/generated/kuber-panel-official-logo-transparent.dim_400x400.png"
-              alt="Kuber Panel"
-              className="w-11 h-11 drop-shadow-[0_0_8px_oklch(0.82_0.18_85/0.5)]"
+            <KuberLogo
+              size={44}
+              className="drop-shadow-[0_0_8px_oklch(0.82_0.18_85/0.5)]"
             />
             <div>
               <p className="font-display font-bold text-primary text-sm leading-tight">
@@ -451,7 +451,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
           {[
             { id: "home" as Module, icon: Building2, label: "Home" },
             { id: "activation" as Module, icon: Shield, label: "Activate" },
-            { id: "activity" as Module, icon: Activity, label: "Live" },
+            { id: "activity" as Module, icon: Activity, label: "Live Fund" },
             { id: "commission" as Module, icon: BarChart3, label: "Earnings" },
             { id: "support" as Module, icon: MessageCircle, label: "Help" },
           ].map((item) => (

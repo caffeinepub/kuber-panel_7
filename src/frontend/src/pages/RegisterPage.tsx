@@ -1,3 +1,4 @@
+import { KuberLogo } from "@/components/KuberLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -91,10 +92,9 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
           <div className="flex flex-col items-center mb-8 gap-3">
             <div className="relative flex items-center justify-center">
               <div className="absolute w-28 h-28 rounded-full bg-primary/15 blur-2xl animate-pulse-gold" />
-              <img
-                src="/assets/generated/kuber-panel-official-logo-transparent.dim_400x400.png"
-                alt="Kuber Panel"
-                className="w-24 h-24 relative z-10 drop-shadow-[0_0_20px_oklch(0.82_0.18_85/0.6)]"
+              <KuberLogo
+                size={96}
+                className="relative z-10 drop-shadow-[0_0_20px_oklch(0.82_0.18_85/0.6)]"
               />
             </div>
             <div className="text-center">

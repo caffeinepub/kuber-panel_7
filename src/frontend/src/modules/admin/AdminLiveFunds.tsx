@@ -132,7 +132,7 @@ export function AdminLiveFunds() {
                   {FUND_CONFIG[key].label}
                 </span>
                 <span className="text-xs text-primary font-bold">
-                  {FUND_CONFIG[key].percentage}% Returns
+                  {FUND_CONFIG[key].percentage}% Commission
                 </span>
               </div>
               <FundTransactionFeed fundType={key} />

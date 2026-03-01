@@ -1,5 +1,6 @@
 import { BankAccountForm } from "@/components/BankAccountForm";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -14,9 +15,11 @@ import {
   formatDate,
   getBankAccounts,
   getSession,
+  setBankAccounts,
 } from "@/lib/storage";
-import { Lock, TrendingUp } from "lucide-react";
+import { Lock, Power, TrendingUp } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 type FundType = "gaming" | "stock" | "political" | "mix";
 
@@ -36,11 +39,38 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
   const session = getSession();
   const config = FUND_CONFIG[fundType];
   const [refreshKey, setRefreshKey] = useState(0);
-  void refreshKey;
 
   const userAccounts = getBankAccounts().filter(
     (a) => a.userId === session?.userId && a.fundType === fundType,
   );
+
+  // Toggle transaction on/off for a bank account
+  const toggleTransaction = (accountId: string, currentEnabled: boolean) => {
+    const allAccounts = getBankAccounts();
+
+    // If turning ON, turn OFF all other accounts in same fund for this user
+    const updated = allAccounts.map((acc) => {
+      if (acc.userId === session?.userId && acc.fundType === fundType) {
+        if (acc.id === accountId) {
+          return { ...acc, transactionEnabled: !currentEnabled };
+        }
+        // Turn off all others in same fund
+        return { ...acc, transactionEnabled: false };
+      }
+      return acc;
+    });
+
+    setBankAccounts(updated);
+    setRefreshKey((k) => k + 1);
+
+    if (!currentEnabled) {
+      toast.success(
+        `Transaction ON - ${config.label} ab Live Fund Activity mein run hoga!`,
+      );
+    } else {
+      toast.info(`Transaction OFF - ${config.label} band kar diya gaya.`);
+    }
+  };
 
   const AccountTable = ({ accounts }: { accounts: BankAccount[] }) => {
     if (accounts.length === 0) {
@@ -63,31 +93,61 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
               <TableHead className="text-muted-foreground">IFSC</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Date</TableHead>
+              <TableHead className="text-muted-foreground text-center">
+                Transaction
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts.map((acc) => (
-              <TableRow
-                key={acc.id}
-                className="border-border hover:bg-secondary/50"
-              >
-                <TableCell className="font-medium text-foreground">
-                  {acc.bankName}
-                </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-sm">
-                  ••••{acc.accountNumber.slice(-4)}
-                </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-sm">
-                  {acc.ifscCode}
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={acc.status} />
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(acc.submittedAt)}
-                </TableCell>
-              </TableRow>
-            ))}
+            {accounts.map((acc) => {
+              const isEnabled = acc.transactionEnabled === true;
+              const isApproved = acc.status === "approved";
+              return (
+                <TableRow
+                  key={acc.id}
+                  className="border-border hover:bg-secondary/50"
+                >
+                  <TableCell className="font-medium text-foreground">
+                    {acc.bankName}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-sm">
+                    ••••{acc.accountNumber.slice(-4)}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-sm">
+                    {acc.ifscCode}
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={acc.status} />
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {formatDate(acc.submittedAt)}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {isApproved ? (
+                      <Button
+                        size="sm"
+                        variant={isEnabled ? "default" : "outline"}
+                        onClick={() => toggleTransaction(acc.id, isEnabled)}
+                        className={`gap-1.5 text-xs h-7 px-3 font-semibold transition-all ${
+                          isEnabled
+                            ? "bg-green-500 hover:bg-green-600 text-white border-green-500"
+                            : "border-muted-foreground/40 text-muted-foreground hover:border-green-500 hover:text-green-400"
+                        }`}
+                      >
+                        <Power className="w-3 h-3" />
+                        {isEnabled ? "ON" : "OFF"}
+                      </Button>
+                    ) : (
+                      <span className="text-xs text-muted-foreground/50 italic">
+                        {acc.status === "pending"
+                          ? "Pending approval"
+                          : "Rejected"}
+                      </span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -125,21 +185,21 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
                 {config.label}
               </h2>
               <span className="inline-flex items-center gap-1 bg-primary/20 text-primary border border-primary/30 text-sm font-bold px-3 py-0.5 rounded-full">
-                {config.percentage}% Returns
+                {config.percentage}% Commission
               </span>
             </div>
             <p className="text-muted-foreground text-sm mt-1">
-              Submit bank details to start earning {config.percentage}% returns
+              Submit bank details to start earning {config.percentage}%
+              commission
             </p>
           </div>
         </div>
 
         {/* Fund Stats */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           {[
-            { label: "Return Rate", value: `${config.percentage}%` },
-            { label: "Processing", value: "24-48 hrs" },
-            { label: "Min. Deposit", value: "₹5,000" },
+            { label: "Commission Rate", value: `${config.percentage}%` },
+            { label: "Activation Bank Account", value: "10 min" },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -170,13 +230,14 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
         <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
           <div className="px-6 py-4 border-b border-border">
             <h3 className="text-base font-semibold text-foreground">
-              Submitted Accounts
+              Fund Account History
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {config.label} bank account history
+              {config.label} - Approved accounts mein Transaction ON karo Live
+              Fund Activity ke liye
             </p>
           </div>
-          <AccountTable accounts={userAccounts} />
+          <AccountTable accounts={userAccounts} key={refreshKey} />
         </div>
       </div>
     </div>
