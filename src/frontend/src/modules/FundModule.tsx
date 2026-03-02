@@ -10,6 +10,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  syncToggleBankAccountTransaction,
+  syncToggleBankAccountTransactionFund,
+} from "@/lib/backend-sync";
+import {
   type BankAccount,
   FUND_CONFIG,
   formatDate,
@@ -113,6 +117,13 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
 
     setBankAccounts(updated);
     setRefreshKey((k) => k + 1);
+
+    // Sync to backend (fire-and-forget)
+    if (acc.fundType === "general") {
+      syncToggleBankAccountTransactionFund(acc.id, fundType, !currentEnabled);
+    } else {
+      syncToggleBankAccountTransaction(acc.id, !currentEnabled);
+    }
 
     if (!currentEnabled) {
       toast.success(

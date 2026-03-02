@@ -1,13 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  type BankAccount,
-  generateId,
-  getBankAccounts,
-  getSession,
-  setBankAccounts,
-} from "@/lib/storage";
+import { syncAddBankAccount } from "@/lib/backend-sync";
+import { type BankAccount, generateId, getSession } from "@/lib/storage";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -83,8 +78,7 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
       submittedAt: new Date().toISOString(),
     };
 
-    const accounts = getBankAccounts();
-    setBankAccounts([...accounts, newAccount]);
+    syncAddBankAccount(newAccount);
 
     toast.success("Bank account submitted for approval!");
     setForm(initial);

@@ -48,7 +48,7 @@ export interface Withdrawal {
   transactionId: string;
   date: string;
   time: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "transfer_successful" | "rejected";
   bankName?: string;
   accountNumber?: string;
   holderName?: string;
@@ -89,6 +89,16 @@ export interface CommissionHistoryEntry {
   note: string; // e.g. "Gaming Fund @ 15%"
 }
 
+// Fund-wise running totals (while fund is active - resets to 0 when fund turns OFF)
+export interface FundBreakdownState {
+  gaming: number;
+  stock: number;
+  political: number;
+  mix: number;
+  // Track which funds were active last tick to detect OFF events
+  lastActiveFund: string | null;
+}
+
 // ---- Keys ----
 const KEYS = {
   USERS: "kuber_users",
@@ -102,6 +112,7 @@ const KEYS = {
   COMMISSION_HISTORY: "kuber_commissionHistory",
   PROCESSED_TXN_IDS: "kuber_processedTxnIds",
   ACCUMULATED_COMMISSION: "kuber_accumulatedCommission",
+  FUND_BREAKDOWN: "kuber_fundBreakdown",
 } as const;
 
 // ---- Generic helpers ----
@@ -180,6 +191,17 @@ export const getAccumulatedCommission = (): AccumulatedCommission =>
   });
 export const setAccumulatedCommission = (c: AccumulatedCommission) =>
   setStorage(KEYS.ACCUMULATED_COMMISSION, c);
+
+export const getFundBreakdown = (): FundBreakdownState =>
+  getStorage<FundBreakdownState>(KEYS.FUND_BREAKDOWN, {
+    gaming: 0,
+    stock: 0,
+    political: 0,
+    mix: 0,
+    lastActiveFund: null,
+  });
+export const setFundBreakdown = (s: FundBreakdownState) =>
+  setStorage(KEYS.FUND_BREAKDOWN, s);
 
 // ---- Admin constants ----
 export const ADMIN_EMAIL = "Kuberpanel@gmail.com";

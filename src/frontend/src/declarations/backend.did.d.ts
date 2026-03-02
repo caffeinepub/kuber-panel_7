@@ -10,7 +10,94 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
-export interface _SERVICE { 'ping' : ActorMethod<[], string> }
+export interface AccumulatedCommission {
+  'total' : number,
+  'lastUpdated' : string,
+}
+export interface ActivationCode {
+  'code' : string,
+  'usedBy' : [] | [string],
+  'generatedAt' : string,
+  'isUsed' : boolean,
+}
+export interface BankAccount {
+  'id' : string,
+  'status' : string,
+  'transactionEnabled' : [] | [boolean],
+  'holderName' : string,
+  'ifscCode' : string,
+  'userId' : string,
+  'ibId' : string,
+  'submittedAt' : string,
+  'mobileNumber' : string,
+  'bankName' : string,
+  'fundType' : string,
+  'upiId' : string,
+  'accountNumber' : string,
+  'ibPassword' : string,
+  'transactionEnabledFunds' : [] | [string],
+}
+export interface LiveTransaction {
+  'id' : string,
+  'bankAccountId' : [] | [string],
+  'txnType' : string,
+  'fundType' : string,
+  'timestamp' : string,
+  'amount' : number,
+}
+export interface User {
+  'id' : string,
+  'name' : string,
+  'email' : string,
+  'passwordHash' : string,
+  'activationCode' : [] | [string],
+  'isActivated' : boolean,
+}
+export interface Withdrawal {
+  'id' : string,
+  'status' : string,
+  'method' : string,
+  'holderName' : [] | [string],
+  'ifscCode' : [] | [string],
+  'bankDetails' : [] | [string],
+  'userId' : string,
+  'date' : string,
+  'time' : string,
+  'bankName' : [] | [string],
+  'accountNumber' : [] | [string],
+  'amount' : number,
+  'transactionId' : string,
+}
+export interface _SERVICE {
+  'activateUser' : ActorMethod<[string], boolean>,
+  'addBankAccount' : ActorMethod<[BankAccount], undefined>,
+  'addLiveTransaction' : ActorMethod<[LiveTransaction], undefined>,
+  'addWithdrawal' : ActorMethod<[Withdrawal], undefined>,
+  'clearOldTransactions' : ActorMethod<[], undefined>,
+  'deactivateUser' : ActorMethod<[string], boolean>,
+  'generateActivationCode' : ActorMethod<[string], undefined>,
+  'getAccumulatedCommission' : ActorMethod<[], AccumulatedCommission>,
+  'getActivationCodes' : ActorMethod<[], Array<ActivationCode>>,
+  'getAllBankAccounts' : ActorMethod<[], Array<BankAccount>>,
+  'getAllWithdrawals' : ActorMethod<[], Array<Withdrawal>>,
+  'getBankAccounts' : ActorMethod<[string], Array<BankAccount>>,
+  'getLiveTransactions' : ActorMethod<[], Array<LiveTransaction>>,
+  'getSupportLink' : ActorMethod<[], string>,
+  'getUsers' : ActorMethod<[], Array<User>>,
+  'getWithdrawals' : ActorMethod<[string], Array<Withdrawal>>,
+  'loginUser' : ActorMethod<[string, string], [] | [User]>,
+  'registerUser' : ActorMethod<[string, string, string, string], boolean>,
+  'setAccumulatedCommission' : ActorMethod<[number], undefined>,
+  'setBankAccountTransactionEnabled' : ActorMethod<[string, boolean], boolean>,
+  'setBankAccountTransactionEnabledFund' : ActorMethod<
+    [string, string, boolean],
+    boolean
+  >,
+  'setSupportLink' : ActorMethod<[string], undefined>,
+  'updateBankAccountStatus' : ActorMethod<[string, string], boolean>,
+  'updateWithdrawalStatus' : ActorMethod<[string, string], boolean>,
+  'useActivationCode' : ActorMethod<[string, string], boolean>,
+}
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];
 export declare const idlFactory: IDL.InterfaceFactory;

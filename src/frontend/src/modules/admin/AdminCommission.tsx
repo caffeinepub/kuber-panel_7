@@ -40,7 +40,7 @@ export function AdminCommission() {
     const tick = () => {
       setCommissions(calculateCommissions());
       const adminWithdrawals = getWithdrawals().filter(
-        (w) => w.userId === "admin" && w.status === "approved",
+        (w) => w.userId === "admin" && w.status === "transfer_successful",
       );
       const debit = adminWithdrawals.reduce((sum, w) => sum + w.amount, 0);
       setTotalDebit(debit);

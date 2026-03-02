@@ -177,7 +177,7 @@ const MODULE_CARDS = [
     id: "withdrawal" as Module,
     label: "Withdrawal",
     icon: ArrowDownToLine,
-    desc: "Withdraw your funds",
+    desc: "View withdrawal info",
     color: "from-orange-500/20 to-orange-500/5",
     border: "border-orange-500/30",
   },
@@ -254,13 +254,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
         return (
           <MyCommission
             isActivated={isActivated}
-            onWithdraw={() => navigate("withdrawal")}
+            onWithdraw={() => {}}
+            viewOnly={true}
           />
         );
       case "activity":
         return <LiveActivity isActivated={isActivated} />;
       case "withdrawal":
-        return <Withdrawal isActivated={isActivated} />;
+        return <Withdrawal isActivated={isActivated} isUserMode={true} />;
       case "history":
         return <WithdrawalHistory isActivated={isActivated} />;
       case "support":
@@ -420,6 +421,14 @@ export function Dashboard({ onLogout }: DashboardProps) {
           )}
 
           <div className="ml-auto flex items-center gap-3">
+            {/* LIVE Platform Status */}
+            <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              </span>
+              <span className="text-xs text-green-400 font-medium">LIVE</span>
+            </div>
             {!isActivated && (
               <button
                 type="button"
@@ -452,7 +461,7 @@ export function Dashboard({ onLogout }: DashboardProps) {
             { id: "home" as Module, icon: Building2, label: "Home" },
             { id: "activation" as Module, icon: Shield, label: "Activate" },
             { id: "activity" as Module, icon: Activity, label: "Live Fund" },
-            { id: "commission" as Module, icon: BarChart3, label: "Earnings" },
+            { id: "history" as Module, icon: History, label: "History" },
             { id: "support" as Module, icon: MessageCircle, label: "Help" },
           ].map((item) => (
             <button
@@ -516,13 +525,20 @@ function HomeView({
         </button>
       )}
 
-      <div>
-        <h2 className="text-2xl font-display font-bold text-foreground mb-1">
-          Dashboard
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Select a module to get started
-        </p>
+      {/* Kuber Logo + Title */}
+      <div className="flex items-center gap-4">
+        <KuberLogo
+          size={56}
+          className="drop-shadow-[0_0_12px_oklch(0.82_0.18_85/0.6)] shrink-0"
+        />
+        <div>
+          <h2 className="text-2xl font-display font-bold text-foreground mb-0.5">
+            Dashboard
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Kuber Panel Start New Journey
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">

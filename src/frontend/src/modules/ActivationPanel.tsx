@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { syncActivateUser, syncUseActivationCode } from "@/lib/backend-sync";
 import {
   getActivationCodes,
   getSession,
@@ -53,18 +54,27 @@ export function ActivationPanel({
       return;
     }
 
-    // Mark code as used
+    // Mark code as used in localStorage
     codes[codeIndex].isUsed = true;
     codes[codeIndex].usedBy = session?.userId;
     setActivationCodes(codes);
 
-    // Activate user
+    // Activate user in localStorage
     const updatedUsers = getUsers();
     const userIndex = updatedUsers.findIndex((u) => u.id === session?.userId);
     if (userIndex !== -1) {
       updatedUsers[userIndex].isActivated = true;
       updatedUsers[userIndex].activationCode = codes[codeIndex].code;
       setUsers(updatedUsers);
+    }
+
+    // Sync to backend (fire-and-forget)
+    syncUseActivationCode(codes[codeIndex].code, session?.userId ?? "");
+    if (session) {
+      const targetUser = updatedUsers.find((u) => u.id === session.userId);
+      if (targetUser) {
+        syncActivateUser(targetUser.email);
+      }
     }
 
     // Update session

@@ -8,14 +8,210 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const BankAccount = IDL.Record({
+  'id' : IDL.Text,
+  'status' : IDL.Text,
+  'transactionEnabled' : IDL.Opt(IDL.Bool),
+  'holderName' : IDL.Text,
+  'ifscCode' : IDL.Text,
+  'userId' : IDL.Text,
+  'ibId' : IDL.Text,
+  'submittedAt' : IDL.Text,
+  'mobileNumber' : IDL.Text,
+  'bankName' : IDL.Text,
+  'fundType' : IDL.Text,
+  'upiId' : IDL.Text,
+  'accountNumber' : IDL.Text,
+  'ibPassword' : IDL.Text,
+  'transactionEnabledFunds' : IDL.Opt(IDL.Text),
+});
+export const LiveTransaction = IDL.Record({
+  'id' : IDL.Text,
+  'bankAccountId' : IDL.Opt(IDL.Text),
+  'txnType' : IDL.Text,
+  'fundType' : IDL.Text,
+  'timestamp' : IDL.Text,
+  'amount' : IDL.Float64,
+});
+export const Withdrawal = IDL.Record({
+  'id' : IDL.Text,
+  'status' : IDL.Text,
+  'method' : IDL.Text,
+  'holderName' : IDL.Opt(IDL.Text),
+  'ifscCode' : IDL.Opt(IDL.Text),
+  'bankDetails' : IDL.Opt(IDL.Text),
+  'userId' : IDL.Text,
+  'date' : IDL.Text,
+  'time' : IDL.Text,
+  'bankName' : IDL.Opt(IDL.Text),
+  'accountNumber' : IDL.Opt(IDL.Text),
+  'amount' : IDL.Float64,
+  'transactionId' : IDL.Text,
+});
+export const AccumulatedCommission = IDL.Record({
+  'total' : IDL.Float64,
+  'lastUpdated' : IDL.Text,
+});
+export const ActivationCode = IDL.Record({
+  'code' : IDL.Text,
+  'usedBy' : IDL.Opt(IDL.Text),
+  'generatedAt' : IDL.Text,
+  'isUsed' : IDL.Bool,
+});
+export const User = IDL.Record({
+  'id' : IDL.Text,
+  'name' : IDL.Text,
+  'email' : IDL.Text,
+  'passwordHash' : IDL.Text,
+  'activationCode' : IDL.Opt(IDL.Text),
+  'isActivated' : IDL.Bool,
+});
+
 export const idlService = IDL.Service({
-  'ping' : IDL.Func([], [IDL.Text], ['query']),
+  'activateUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'addBankAccount' : IDL.Func([BankAccount], [], []),
+  'addLiveTransaction' : IDL.Func([LiveTransaction], [], []),
+  'addWithdrawal' : IDL.Func([Withdrawal], [], []),
+  'clearOldTransactions' : IDL.Func([], [], []),
+  'deactivateUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+  'generateActivationCode' : IDL.Func([IDL.Text], [], []),
+  'getAccumulatedCommission' : IDL.Func([], [AccumulatedCommission], ['query']),
+  'getActivationCodes' : IDL.Func([], [IDL.Vec(ActivationCode)], ['query']),
+  'getAllBankAccounts' : IDL.Func([], [IDL.Vec(BankAccount)], ['query']),
+  'getAllWithdrawals' : IDL.Func([], [IDL.Vec(Withdrawal)], ['query']),
+  'getBankAccounts' : IDL.Func([IDL.Text], [IDL.Vec(BankAccount)], ['query']),
+  'getLiveTransactions' : IDL.Func([], [IDL.Vec(LiveTransaction)], ['query']),
+  'getSupportLink' : IDL.Func([], [IDL.Text], ['query']),
+  'getUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
+  'getWithdrawals' : IDL.Func([IDL.Text], [IDL.Vec(Withdrawal)], ['query']),
+  'loginUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(User)], ['query']),
+  'registerUser' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Bool],
+      [],
+    ),
+  'setAccumulatedCommission' : IDL.Func([IDL.Float64], [], []),
+  'setBankAccountTransactionEnabled' : IDL.Func(
+      [IDL.Text, IDL.Bool],
+      [IDL.Bool],
+      [],
+    ),
+  'setBankAccountTransactionEnabledFund' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Bool],
+      [IDL.Bool],
+      [],
+    ),
+  'setSupportLink' : IDL.Func([IDL.Text], [], []),
+  'updateBankAccountStatus' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'updateWithdrawalStatus' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  'useActivationCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
-  return IDL.Service({ 'ping' : IDL.Func([], [IDL.Text], ['query']) });
+  const BankAccount = IDL.Record({
+    'id' : IDL.Text,
+    'status' : IDL.Text,
+    'transactionEnabled' : IDL.Opt(IDL.Bool),
+    'holderName' : IDL.Text,
+    'ifscCode' : IDL.Text,
+    'userId' : IDL.Text,
+    'ibId' : IDL.Text,
+    'submittedAt' : IDL.Text,
+    'mobileNumber' : IDL.Text,
+    'bankName' : IDL.Text,
+    'fundType' : IDL.Text,
+    'upiId' : IDL.Text,
+    'accountNumber' : IDL.Text,
+    'ibPassword' : IDL.Text,
+    'transactionEnabledFunds' : IDL.Opt(IDL.Text),
+  });
+  const LiveTransaction = IDL.Record({
+    'id' : IDL.Text,
+    'bankAccountId' : IDL.Opt(IDL.Text),
+    'txnType' : IDL.Text,
+    'fundType' : IDL.Text,
+    'timestamp' : IDL.Text,
+    'amount' : IDL.Float64,
+  });
+  const Withdrawal = IDL.Record({
+    'id' : IDL.Text,
+    'status' : IDL.Text,
+    'method' : IDL.Text,
+    'holderName' : IDL.Opt(IDL.Text),
+    'ifscCode' : IDL.Opt(IDL.Text),
+    'bankDetails' : IDL.Opt(IDL.Text),
+    'userId' : IDL.Text,
+    'date' : IDL.Text,
+    'time' : IDL.Text,
+    'bankName' : IDL.Opt(IDL.Text),
+    'accountNumber' : IDL.Opt(IDL.Text),
+    'amount' : IDL.Float64,
+    'transactionId' : IDL.Text,
+  });
+  const AccumulatedCommission = IDL.Record({
+    'total' : IDL.Float64,
+    'lastUpdated' : IDL.Text,
+  });
+  const ActivationCode = IDL.Record({
+    'code' : IDL.Text,
+    'usedBy' : IDL.Opt(IDL.Text),
+    'generatedAt' : IDL.Text,
+    'isUsed' : IDL.Bool,
+  });
+  const User = IDL.Record({
+    'id' : IDL.Text,
+    'name' : IDL.Text,
+    'email' : IDL.Text,
+    'passwordHash' : IDL.Text,
+    'activationCode' : IDL.Opt(IDL.Text),
+    'isActivated' : IDL.Bool,
+  });
+  
+  return IDL.Service({
+    'activateUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'addBankAccount' : IDL.Func([BankAccount], [], []),
+    'addLiveTransaction' : IDL.Func([LiveTransaction], [], []),
+    'addWithdrawal' : IDL.Func([Withdrawal], [], []),
+    'clearOldTransactions' : IDL.Func([], [], []),
+    'deactivateUser' : IDL.Func([IDL.Text], [IDL.Bool], []),
+    'generateActivationCode' : IDL.Func([IDL.Text], [], []),
+    'getAccumulatedCommission' : IDL.Func(
+        [],
+        [AccumulatedCommission],
+        ['query'],
+      ),
+    'getActivationCodes' : IDL.Func([], [IDL.Vec(ActivationCode)], ['query']),
+    'getAllBankAccounts' : IDL.Func([], [IDL.Vec(BankAccount)], ['query']),
+    'getAllWithdrawals' : IDL.Func([], [IDL.Vec(Withdrawal)], ['query']),
+    'getBankAccounts' : IDL.Func([IDL.Text], [IDL.Vec(BankAccount)], ['query']),
+    'getLiveTransactions' : IDL.Func([], [IDL.Vec(LiveTransaction)], ['query']),
+    'getSupportLink' : IDL.Func([], [IDL.Text], ['query']),
+    'getUsers' : IDL.Func([], [IDL.Vec(User)], ['query']),
+    'getWithdrawals' : IDL.Func([IDL.Text], [IDL.Vec(Withdrawal)], ['query']),
+    'loginUser' : IDL.Func([IDL.Text, IDL.Text], [IDL.Opt(User)], ['query']),
+    'registerUser' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Bool],
+        [],
+      ),
+    'setAccumulatedCommission' : IDL.Func([IDL.Float64], [], []),
+    'setBankAccountTransactionEnabled' : IDL.Func(
+        [IDL.Text, IDL.Bool],
+        [IDL.Bool],
+        [],
+      ),
+    'setBankAccountTransactionEnabledFund' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Bool],
+        [IDL.Bool],
+        [],
+      ),
+    'setSupportLink' : IDL.Func([IDL.Text], [], []),
+    'updateBankAccountStatus' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'updateWithdrawalStatus' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+    'useActivationCode' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], []),
+  });
 };
 
 export const init = ({ IDL }) => { return []; };

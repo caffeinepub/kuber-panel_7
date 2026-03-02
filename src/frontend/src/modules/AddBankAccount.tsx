@@ -112,9 +112,9 @@ export function AddBankAccount() {
             Bank Account History
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Ye accounts saare Fund Options mein bhi dikhenge. Koi bhi Fund
-            option mein jaake ON/OFF karo - Aapka Bank Account ussi fund mein
-            live run hoga.
+            These accounts will appear in all Fund Options. Go to any Fund
+            option and turn ON/OFF — Your Bank Account will run live in that
+            fund.
           </p>
         </div>
         <AccountTable accounts={userAccounts} key={refreshKey} />

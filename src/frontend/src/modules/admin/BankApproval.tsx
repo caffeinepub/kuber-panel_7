@@ -8,12 +8,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { syncUpdateBankAccountStatus } from "@/lib/backend-sync";
 import {
   FUND_CONFIG,
   formatDate,
   getBankAccounts,
   getUsers,
-  setBankAccounts,
 } from "@/lib/storage";
 import { Building2, CheckCircle2, XCircle } from "lucide-react";
 import { useState } from "react";
@@ -37,19 +37,13 @@ export function BankApproval() {
   };
 
   const handleApprove = (id: string) => {
-    const updated = getBankAccounts().map((a) =>
-      a.id === id ? { ...a, status: "approved" as const } : a,
-    );
-    setBankAccounts(updated);
+    syncUpdateBankAccountStatus(id, "approved");
     setRefreshKey((k) => k + 1);
     toast.success("Bank account approved!");
   };
 
   const handleReject = (id: string) => {
-    const updated = getBankAccounts().map((a) =>
-      a.id === id ? { ...a, status: "rejected" as const } : a,
-    );
-    setBankAccounts(updated);
+    syncUpdateBankAccountStatus(id, "rejected");
     setRefreshKey((k) => k + 1);
     toast.error("Bank account rejected.");
   };

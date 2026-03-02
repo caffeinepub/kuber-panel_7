@@ -10,71 +10,46 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  syncAddWithdrawal,
+  syncSetAccumulatedCommission,
+} from "@/lib/backend-sync";
+import {
   type BankAccount,
   generateId,
   generateTransactionId,
+  getAccumulatedCommission,
   getBankAccounts,
   getSession,
   getWithdrawals,
-  setWithdrawals,
 } from "@/lib/storage";
 import { ArrowDownToLine, CheckCircle2, Loader2, Lock } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface WithdrawalProps {
   isActivated: boolean;
+  isUserMode?: boolean;
 }
 
-// Auto-approve pending withdrawals after 5-10 minutes
-function useAutoApproveWithdrawals(userId: string | undefined) {
-  const timerRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map(),
-  );
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const checkAndSchedule = () => {
-      const withdrawals = getWithdrawals();
-      const pending = withdrawals.filter(
-        (w) => w.userId === userId && w.status === "pending",
-      );
-
-      for (const w of pending) {
-        if (!timerRef.current.has(w.id)) {
-          // Random delay between 5-10 minutes (300000-600000 ms)
-          const delay = Math.floor(Math.random() * 300000) + 300000;
-          const timer = setTimeout(() => {
-            const all = getWithdrawals();
-            const updated = all.map((item) =>
-              item.id === w.id
-                ? { ...item, status: "approved" as const }
-                : item,
-            );
-            setWithdrawals(updated);
-            timerRef.current.delete(w.id);
-          }, delay);
-          timerRef.current.set(w.id, timer);
-        }
-      }
-    };
-
-    checkAndSchedule();
-    const interval = setInterval(checkAndSchedule, 10000);
-    return () => {
-      clearInterval(interval);
-      for (const timer of timerRef.current.values()) {
-        clearTimeout(timer);
-      }
-    };
-  }, [userId]);
-}
-
-export function Withdrawal({ isActivated }: WithdrawalProps) {
+export function Withdrawal({
+  isActivated,
+  isUserMode = false,
+}: WithdrawalProps) {
   const session = getSession();
   const [loading, setLoading] = useState(false);
-  useAutoApproveWithdrawals(session?.userId);
+
+  // In user mode, get net commission balance
+  const getUserCommissionBalance = () => {
+    if (!session) return 0;
+    const acc = getAccumulatedCommission();
+    const withdrawn = getWithdrawals()
+      .filter(
+        (w) =>
+          w.userId === session.userId && w.status === "transfer_successful",
+      )
+      .reduce((sum, w) => sum + w.amount, 0);
+    return Math.max(0, acc.total - withdrawn);
+  };
 
   // UPI
   const [upiId, setUpiId] = useState("");
@@ -107,9 +82,43 @@ export function Withdrawal({ isActivated }: WithdrawalProps) {
       toast.error("Please fill in all required fields.");
       return;
     }
+    // In user mode: block withdrawal if no commission balance
+    if (isUserMode) {
+      const balance = getUserCommissionBalance();
+      if (balance <= 0) {
+        toast.error(
+          "Insufficient commission balance. You cannot withdraw without commission earnings.",
+        );
+        return;
+      }
+      if (Number(amount) > balance) {
+        toast.error(
+          `Withdrawal amount exceeds your commission balance of ₹${balance.toFixed(2)}.`,
+        );
+        return;
+      }
+    }
+
+    // Admin mode: check accumulated commission balance
+    if (!isUserMode) {
+      const acc = getAccumulatedCommission();
+      const alreadyWithdrawn = getWithdrawals()
+        .filter(
+          (w) =>
+            w.userId === session?.userId && w.status === "transfer_successful",
+        )
+        .reduce((sum, w) => sum + w.amount, 0);
+      const available = Math.max(0, acc.total - alreadyWithdrawn);
+      if (Number(amount) > available) {
+        toast.error(
+          `Withdrawal amount exceeds available commission balance of ₹${available.toFixed(2)}.`,
+        );
+        return;
+      }
+    }
 
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 600));
 
     const now = new Date();
     const withdrawal = {
@@ -121,7 +130,7 @@ export function Withdrawal({ isActivated }: WithdrawalProps) {
       transactionId: generateTransactionId(),
       date: now.toLocaleDateString("en-IN"),
       time: now.toLocaleTimeString("en-IN"),
-      status: "pending" as const,
+      status: "transfer_successful" as const, // Instantly approved
       ...(method === "bank" && selectedBank
         ? {
             bankName: selectedBank.bankName,
@@ -132,9 +141,16 @@ export function Withdrawal({ isActivated }: WithdrawalProps) {
         : {}),
     };
 
-    const withdrawals = getWithdrawals();
-    setWithdrawals([...withdrawals, withdrawal]);
-    toast.success("Withdrawal request submitted!");
+    syncAddWithdrawal(withdrawal);
+
+    // Auto-deduct from accumulated commission (admin only)
+    if (!isUserMode) {
+      const acc = getAccumulatedCommission();
+      const newTotal = Math.max(0, acc.total - Number(amount));
+      syncSetAccumulatedCommission(newTotal);
+    }
+
+    toast.success("Withdrawal successful! Status: Transfer Successful");
     setLoading(false);
 
     // Reset
@@ -201,11 +217,12 @@ export function Withdrawal({ isActivated }: WithdrawalProps) {
           </div>
         </div>
 
-        {/* Auto-approval notice */}
+        {/* Instant approval notice */}
         <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
           <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
           <p className="text-xs text-green-400">
-            Withdrawal requests are automatically approved within 5-10 minutes.
+            Withdrawal requests are instantly approved. Status will show
+            "Transfer Successful" immediately.
           </p>
         </div>
 
@@ -323,7 +340,7 @@ export function Withdrawal({ isActivated }: WithdrawalProps) {
               {amountInput(usdtAmount, setUsdtAmount)}
               <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
                 <p className="text-warning text-xs">
-                  ⚠️ Only TRC20 network is supported. Double-check your wallet
+                  Only TRC20 network is supported. Double-check your wallet
                   address.
                 </p>
               </div>

@@ -18,11 +18,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  type CommissionHistoryEntry,
   type Withdrawal,
   formatCurrency,
   generateId,
   generateTransactionId,
+  getAccumulatedCommission,
+  getCommissionHistory,
   getWithdrawals,
+  setAccumulatedCommission,
+  setCommissionHistory,
   setWithdrawals,
 } from "@/lib/storage";
 import { ArrowDownToLine, Loader2 } from "lucide-react";
@@ -39,10 +44,30 @@ export function AdminWithdrawal() {
     .filter((w) => w.userId === "admin")
     .reverse();
 
+  // Current available commission balance (total minus already withdrawn)
+  const getAvailableBalance = () => {
+    const acc = getAccumulatedCommission();
+    const withdrawn = getWithdrawals()
+      .filter((w) => w.userId === "admin" && w.status === "transfer_successful")
+      .reduce((sum, w) => sum + w.amount, 0);
+    return Math.max(0, acc.total - withdrawn);
+  };
+
+  const availableBalance = getAvailableBalance();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || Number(amount) < 100) {
+    const withdrawAmount = Number(amount);
+    if (!amount || withdrawAmount < 100) {
       toast.error("Minimum withdrawal amount is ₹100.");
+      return;
+    }
+
+    const balance = getAvailableBalance();
+    if (withdrawAmount > balance) {
+      toast.error(
+        `Insufficient commission balance. Available: ₹${balance.toFixed(2)}`,
+      );
       return;
     }
 
@@ -50,21 +75,45 @@ export function AdminWithdrawal() {
     await new Promise((r) => setTimeout(r, 700));
 
     const now = new Date();
+
+    // Deduct from accumulated commission
+    const acc = getAccumulatedCommission();
+    acc.total = Math.max(0, acc.total - withdrawAmount);
+    acc.lastUpdated = now.toISOString();
+    setAccumulatedCommission(acc);
+
+    // Add red deduction entry to commission history
+    const expiresAt = new Date(now);
+    expiresAt.setDate(expiresAt.getDate() + 30);
+    const deductionEntry: CommissionHistoryEntry = {
+      id: `wd_deduct_${Date.now()}`,
+      fundType: "withdrawal" as never,
+      fundPercentage: 0,
+      amount: -withdrawAmount,
+      earnedAt: now.toISOString(),
+      expiresAt: expiresAt.toISOString(),
+      note: `Withdrawal — ${method.toUpperCase()}${details ? ` (${details})` : ""}`,
+    };
+    const history = getCommissionHistory();
+    setCommissionHistory([...history, deductionEntry]);
+
     const withdrawal: Withdrawal = {
       id: generateId(),
       userId: "admin",
       method,
-      amount: Number(amount),
+      amount: withdrawAmount,
       bankDetails: details,
       transactionId: generateTransactionId(),
       date: now.toLocaleDateString("en-IN"),
       time: now.toLocaleTimeString("en-IN"),
-      status: "approved",
+      status: "transfer_successful",
     };
 
     const all = getWithdrawals();
     setWithdrawals([...all, withdrawal]);
-    toast.success("Withdrawal recorded.");
+    toast.success(
+      `Withdrawal of ₹${withdrawAmount.toLocaleString("en-IN")} recorded. Commission deducted.`,
+    );
     setAmount("");
     setDetails("");
     setLoading(false);
@@ -84,6 +133,19 @@ export function AdminWithdrawal() {
             Record and track withdrawals
           </p>
         </div>
+      </div>
+
+      {/* Available balance card */}
+      <div className="bg-card border border-primary/30 rounded-xl p-4 card-glow flex items-center justify-between">
+        <div>
+          <p className="text-muted-foreground text-sm">
+            Available Commission Balance
+          </p>
+          <p className="text-2xl font-display font-bold text-primary tabular-nums mt-0.5">
+            {formatCurrency(availableBalance)}
+          </p>
+        </div>
+        <ArrowDownToLine className="w-8 h-8 text-primary opacity-40" />
       </div>
 
       {/* Form */}

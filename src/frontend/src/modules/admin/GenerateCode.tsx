@@ -7,12 +7,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { syncGenerateActivationCode } from "@/lib/backend-sync";
 import {
   formatDate,
   generateActivationCode,
   getActivationCodes,
   getUsers,
-  setActivationCodes,
 } from "@/lib/storage";
 import { Check, Copy, Key, Plus } from "lucide-react";
 import { useState } from "react";
@@ -34,13 +34,7 @@ export function GenerateCode() {
 
   const handleGenerate = () => {
     const code = generateActivationCode();
-    const newEntry = {
-      code,
-      isUsed: false,
-      generatedAt: new Date().toISOString(),
-    };
-    const all = getActivationCodes();
-    setActivationCodes([...all, newEntry]);
+    syncGenerateActivationCode(code);
     setRefreshKey((k) => k + 1);
     toast.success(`Code generated: ${code}`);
   };

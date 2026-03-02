@@ -89,25 +89,774 @@ export class ExternalBlob {
         return this;
     }
 }
-export interface backendInterface {
-    ping(): Promise<string>;
+export interface BankAccount {
+    id: string;
+    status: string;
+    transactionEnabled?: boolean;
+    holderName: string;
+    ifscCode: string;
+    userId: string;
+    ibId: string;
+    submittedAt: string;
+    mobileNumber: string;
+    bankName: string;
+    fundType: string;
+    upiId: string;
+    accountNumber: string;
+    ibPassword: string;
+    transactionEnabledFunds?: string;
 }
+export interface AccumulatedCommission {
+    total: number;
+    lastUpdated: string;
+}
+export interface Withdrawal {
+    id: string;
+    status: string;
+    method: string;
+    holderName?: string;
+    ifscCode?: string;
+    bankDetails?: string;
+    userId: string;
+    date: string;
+    time: string;
+    bankName?: string;
+    accountNumber?: string;
+    amount: number;
+    transactionId: string;
+}
+export interface LiveTransaction {
+    id: string;
+    bankAccountId?: string;
+    txnType: string;
+    fundType: string;
+    timestamp: string;
+    amount: number;
+}
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    passwordHash: string;
+    activationCode?: string;
+    isActivated: boolean;
+}
+export interface ActivationCode {
+    code: string;
+    usedBy?: string;
+    generatedAt: string;
+    isUsed: boolean;
+}
+export interface backendInterface {
+    activateUser(email: string): Promise<boolean>;
+    addBankAccount(account: BankAccount): Promise<void>;
+    addLiveTransaction(txn: LiveTransaction): Promise<void>;
+    addWithdrawal(withdrawal: Withdrawal): Promise<void>;
+    clearOldTransactions(): Promise<void>;
+    deactivateUser(email: string): Promise<boolean>;
+    generateActivationCode(code: string): Promise<void>;
+    getAccumulatedCommission(): Promise<AccumulatedCommission>;
+    getActivationCodes(): Promise<Array<ActivationCode>>;
+    getAllBankAccounts(): Promise<Array<BankAccount>>;
+    getAllWithdrawals(): Promise<Array<Withdrawal>>;
+    getBankAccounts(userId: string): Promise<Array<BankAccount>>;
+    getLiveTransactions(): Promise<Array<LiveTransaction>>;
+    getSupportLink(): Promise<string>;
+    getUsers(): Promise<Array<User>>;
+    getWithdrawals(userId: string): Promise<Array<Withdrawal>>;
+    loginUser(email: string, passwordHash: string): Promise<User | null>;
+    registerUser(id: string, name: string, email: string, passwordHash: string): Promise<boolean>;
+    setAccumulatedCommission(total: number): Promise<void>;
+    setBankAccountTransactionEnabled(accountId: string, enabled: boolean): Promise<boolean>;
+    setBankAccountTransactionEnabledFund(accountId: string, fundType: string, enabled: boolean): Promise<boolean>;
+    setSupportLink(newLink: string): Promise<void>;
+    updateBankAccountStatus(accountId: string, status: string): Promise<boolean>;
+    updateWithdrawalStatus(withdrawalId: string, status: string): Promise<boolean>;
+    useActivationCode(code: string, userId: string): Promise<boolean>;
+}
+import type { ActivationCode as _ActivationCode, BankAccount as _BankAccount, LiveTransaction as _LiveTransaction, User as _User, Withdrawal as _Withdrawal } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
     constructor(private actor: ActorSubclass<_SERVICE>, private _uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, private _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, private processError?: (error: unknown) => never){}
-    async ping(): Promise<string> {
+    async activateUser(arg0: string): Promise<boolean> {
         if (this.processError) {
             try {
-                const result = await this.actor.ping();
+                const result = await this.actor.activateUser(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.ping();
+            const result = await this.actor.activateUser(arg0);
             return result;
         }
     }
+    async addBankAccount(arg0: BankAccount): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addBankAccount(to_candid_BankAccount_n1(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addBankAccount(to_candid_BankAccount_n1(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async addLiveTransaction(arg0: LiveTransaction): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addLiveTransaction(to_candid_LiveTransaction_n3(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addLiveTransaction(to_candid_LiveTransaction_n3(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async addWithdrawal(arg0: Withdrawal): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addWithdrawal(to_candid_Withdrawal_n5(this._uploadFile, this._downloadFile, arg0));
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addWithdrawal(to_candid_Withdrawal_n5(this._uploadFile, this._downloadFile, arg0));
+            return result;
+        }
+    }
+    async clearOldTransactions(): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.clearOldTransactions();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.clearOldTransactions();
+            return result;
+        }
+    }
+    async deactivateUser(arg0: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deactivateUser(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deactivateUser(arg0);
+            return result;
+        }
+    }
+    async generateActivationCode(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.generateActivationCode(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.generateActivationCode(arg0);
+            return result;
+        }
+    }
+    async getAccumulatedCommission(): Promise<AccumulatedCommission> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAccumulatedCommission();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAccumulatedCommission();
+            return result;
+        }
+    }
+    async getActivationCodes(): Promise<Array<ActivationCode>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getActivationCodes();
+                return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getActivationCodes();
+            return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllBankAccounts(): Promise<Array<BankAccount>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllBankAccounts();
+                return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllBankAccounts();
+            return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAllWithdrawals(): Promise<Array<Withdrawal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllWithdrawals();
+                return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllWithdrawals();
+            return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getBankAccounts(arg0: string): Promise<Array<BankAccount>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getBankAccounts(arg0);
+                return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getBankAccounts(arg0);
+            return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getLiveTransactions(): Promise<Array<LiveTransaction>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getLiveTransactions();
+                return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getLiveTransactions();
+            return from_candid_vec_n18(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getSupportLink(): Promise<string> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getSupportLink();
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getSupportLink();
+            return result;
+        }
+    }
+    async getUsers(): Promise<Array<User>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getUsers();
+                return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getUsers();
+            return from_candid_vec_n21(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getWithdrawals(arg0: string): Promise<Array<Withdrawal>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getWithdrawals(arg0);
+                return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getWithdrawals(arg0);
+            return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async loginUser(arg0: string, arg1: string): Promise<User | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.loginUser(arg0, arg1);
+                return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.loginUser(arg0, arg1);
+            return from_candid_opt_n24(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async registerUser(arg0: string, arg1: string, arg2: string, arg3: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.registerUser(arg0, arg1, arg2, arg3);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.registerUser(arg0, arg1, arg2, arg3);
+            return result;
+        }
+    }
+    async setAccumulatedCommission(arg0: number): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setAccumulatedCommission(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setAccumulatedCommission(arg0);
+            return result;
+        }
+    }
+    async setBankAccountTransactionEnabled(arg0: string, arg1: boolean): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setBankAccountTransactionEnabled(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setBankAccountTransactionEnabled(arg0, arg1);
+            return result;
+        }
+    }
+    async setBankAccountTransactionEnabledFund(arg0: string, arg1: string, arg2: boolean): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setBankAccountTransactionEnabledFund(arg0, arg1, arg2);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setBankAccountTransactionEnabledFund(arg0, arg1, arg2);
+            return result;
+        }
+    }
+    async setSupportLink(arg0: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.setSupportLink(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.setSupportLink(arg0);
+            return result;
+        }
+    }
+    async updateBankAccountStatus(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateBankAccountStatus(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateBankAccountStatus(arg0, arg1);
+            return result;
+        }
+    }
+    async updateWithdrawalStatus(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateWithdrawalStatus(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateWithdrawalStatus(arg0, arg1);
+            return result;
+        }
+    }
+    async useActivationCode(arg0: string, arg1: string): Promise<boolean> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.useActivationCode(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.useActivationCode(arg0, arg1);
+            return result;
+        }
+    }
+}
+function from_candid_ActivationCode_n8(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _ActivationCode): ActivationCode {
+    return from_candid_record_n9(_uploadFile, _downloadFile, value);
+}
+function from_candid_BankAccount_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _BankAccount): BankAccount {
+    return from_candid_record_n13(_uploadFile, _downloadFile, value);
+}
+function from_candid_LiveTransaction_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _LiveTransaction): LiveTransaction {
+    return from_candid_record_n20(_uploadFile, _downloadFile, value);
+}
+function from_candid_User_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _User): User {
+    return from_candid_record_n23(_uploadFile, _downloadFile, value);
+}
+function from_candid_Withdrawal_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Withdrawal): Withdrawal {
+    return from_candid_record_n17(_uploadFile, _downloadFile, value);
+}
+function from_candid_opt_n10(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {
+    return value.length === 0 ? null : value[0];
+}
+function from_candid_opt_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_User]): User | null {
+    return value.length === 0 ? null : from_candid_User_n22(_uploadFile, _downloadFile, value[0]);
+}
+function from_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    status: string;
+    transactionEnabled: [] | [boolean];
+    holderName: string;
+    ifscCode: string;
+    userId: string;
+    ibId: string;
+    submittedAt: string;
+    mobileNumber: string;
+    bankName: string;
+    fundType: string;
+    upiId: string;
+    accountNumber: string;
+    ibPassword: string;
+    transactionEnabledFunds: [] | [string];
+}): {
+    id: string;
+    status: string;
+    transactionEnabled?: boolean;
+    holderName: string;
+    ifscCode: string;
+    userId: string;
+    ibId: string;
+    submittedAt: string;
+    mobileNumber: string;
+    bankName: string;
+    fundType: string;
+    upiId: string;
+    accountNumber: string;
+    ibPassword: string;
+    transactionEnabledFunds?: string;
+} {
+    return {
+        id: value.id,
+        status: value.status,
+        transactionEnabled: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.transactionEnabled)),
+        holderName: value.holderName,
+        ifscCode: value.ifscCode,
+        userId: value.userId,
+        ibId: value.ibId,
+        submittedAt: value.submittedAt,
+        mobileNumber: value.mobileNumber,
+        bankName: value.bankName,
+        fundType: value.fundType,
+        upiId: value.upiId,
+        accountNumber: value.accountNumber,
+        ibPassword: value.ibPassword,
+        transactionEnabledFunds: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.transactionEnabledFunds))
+    };
+}
+function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    status: string;
+    method: string;
+    holderName: [] | [string];
+    ifscCode: [] | [string];
+    bankDetails: [] | [string];
+    userId: string;
+    date: string;
+    time: string;
+    bankName: [] | [string];
+    accountNumber: [] | [string];
+    amount: number;
+    transactionId: string;
+}): {
+    id: string;
+    status: string;
+    method: string;
+    holderName?: string;
+    ifscCode?: string;
+    bankDetails?: string;
+    userId: string;
+    date: string;
+    time: string;
+    bankName?: string;
+    accountNumber?: string;
+    amount: number;
+    transactionId: string;
+} {
+    return {
+        id: value.id,
+        status: value.status,
+        method: value.method,
+        holderName: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.holderName)),
+        ifscCode: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.ifscCode)),
+        bankDetails: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.bankDetails)),
+        userId: value.userId,
+        date: value.date,
+        time: value.time,
+        bankName: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.bankName)),
+        accountNumber: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.accountNumber)),
+        amount: value.amount,
+        transactionId: value.transactionId
+    };
+}
+function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    bankAccountId: [] | [string];
+    txnType: string;
+    fundType: string;
+    timestamp: string;
+    amount: number;
+}): {
+    id: string;
+    bankAccountId?: string;
+    txnType: string;
+    fundType: string;
+    timestamp: string;
+    amount: number;
+} {
+    return {
+        id: value.id,
+        bankAccountId: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.bankAccountId)),
+        txnType: value.txnType,
+        fundType: value.fundType,
+        timestamp: value.timestamp,
+        amount: value.amount
+    };
+}
+function from_candid_record_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    name: string;
+    email: string;
+    passwordHash: string;
+    activationCode: [] | [string];
+    isActivated: boolean;
+}): {
+    id: string;
+    name: string;
+    email: string;
+    passwordHash: string;
+    activationCode?: string;
+    isActivated: boolean;
+} {
+    return {
+        id: value.id,
+        name: value.name,
+        email: value.email,
+        passwordHash: value.passwordHash,
+        activationCode: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.activationCode)),
+        isActivated: value.isActivated
+    };
+}
+function from_candid_record_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    code: string;
+    usedBy: [] | [string];
+    generatedAt: string;
+    isUsed: boolean;
+}): {
+    code: string;
+    usedBy?: string;
+    generatedAt: string;
+    isUsed: boolean;
+} {
+    return {
+        code: value.code,
+        usedBy: record_opt_to_undefined(from_candid_opt_n10(_uploadFile, _downloadFile, value.usedBy)),
+        generatedAt: value.generatedAt,
+        isUsed: value.isUsed
+    };
+}
+function from_candid_vec_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_BankAccount>): Array<BankAccount> {
+    return value.map((x)=>from_candid_BankAccount_n12(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Withdrawal>): Array<Withdrawal> {
+    return value.map((x)=>from_candid_Withdrawal_n16(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_LiveTransaction>): Array<LiveTransaction> {
+    return value.map((x)=>from_candid_LiveTransaction_n19(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_User>): Array<User> {
+    return value.map((x)=>from_candid_User_n22(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_ActivationCode>): Array<ActivationCode> {
+    return value.map((x)=>from_candid_ActivationCode_n8(_uploadFile, _downloadFile, x));
+}
+function to_candid_BankAccount_n1(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: BankAccount): _BankAccount {
+    return to_candid_record_n2(_uploadFile, _downloadFile, value);
+}
+function to_candid_LiveTransaction_n3(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: LiveTransaction): _LiveTransaction {
+    return to_candid_record_n4(_uploadFile, _downloadFile, value);
+}
+function to_candid_Withdrawal_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Withdrawal): _Withdrawal {
+    return to_candid_record_n6(_uploadFile, _downloadFile, value);
+}
+function to_candid_record_n2(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    status: string;
+    transactionEnabled?: boolean;
+    holderName: string;
+    ifscCode: string;
+    userId: string;
+    ibId: string;
+    submittedAt: string;
+    mobileNumber: string;
+    bankName: string;
+    fundType: string;
+    upiId: string;
+    accountNumber: string;
+    ibPassword: string;
+    transactionEnabledFunds?: string;
+}): {
+    id: string;
+    status: string;
+    transactionEnabled: [] | [boolean];
+    holderName: string;
+    ifscCode: string;
+    userId: string;
+    ibId: string;
+    submittedAt: string;
+    mobileNumber: string;
+    bankName: string;
+    fundType: string;
+    upiId: string;
+    accountNumber: string;
+    ibPassword: string;
+    transactionEnabledFunds: [] | [string];
+} {
+    return {
+        id: value.id,
+        status: value.status,
+        transactionEnabled: value.transactionEnabled ? candid_some(value.transactionEnabled) : candid_none(),
+        holderName: value.holderName,
+        ifscCode: value.ifscCode,
+        userId: value.userId,
+        ibId: value.ibId,
+        submittedAt: value.submittedAt,
+        mobileNumber: value.mobileNumber,
+        bankName: value.bankName,
+        fundType: value.fundType,
+        upiId: value.upiId,
+        accountNumber: value.accountNumber,
+        ibPassword: value.ibPassword,
+        transactionEnabledFunds: value.transactionEnabledFunds ? candid_some(value.transactionEnabledFunds) : candid_none()
+    };
+}
+function to_candid_record_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    bankAccountId?: string;
+    txnType: string;
+    fundType: string;
+    timestamp: string;
+    amount: number;
+}): {
+    id: string;
+    bankAccountId: [] | [string];
+    txnType: string;
+    fundType: string;
+    timestamp: string;
+    amount: number;
+} {
+    return {
+        id: value.id,
+        bankAccountId: value.bankAccountId ? candid_some(value.bankAccountId) : candid_none(),
+        txnType: value.txnType,
+        fundType: value.fundType,
+        timestamp: value.timestamp,
+        amount: value.amount
+    };
+}
+function to_candid_record_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: string;
+    status: string;
+    method: string;
+    holderName?: string;
+    ifscCode?: string;
+    bankDetails?: string;
+    userId: string;
+    date: string;
+    time: string;
+    bankName?: string;
+    accountNumber?: string;
+    amount: number;
+    transactionId: string;
+}): {
+    id: string;
+    status: string;
+    method: string;
+    holderName: [] | [string];
+    ifscCode: [] | [string];
+    bankDetails: [] | [string];
+    userId: string;
+    date: string;
+    time: string;
+    bankName: [] | [string];
+    accountNumber: [] | [string];
+    amount: number;
+    transactionId: string;
+} {
+    return {
+        id: value.id,
+        status: value.status,
+        method: value.method,
+        holderName: value.holderName ? candid_some(value.holderName) : candid_none(),
+        ifscCode: value.ifscCode ? candid_some(value.ifscCode) : candid_none(),
+        bankDetails: value.bankDetails ? candid_some(value.bankDetails) : candid_none(),
+        userId: value.userId,
+        date: value.date,
+        time: value.time,
+        bankName: value.bankName ? candid_some(value.bankName) : candid_none(),
+        accountNumber: value.accountNumber ? candid_some(value.accountNumber) : candid_none(),
+        amount: value.amount,
+        transactionId: value.transactionId
+    };
 }
 export interface CreateActorOptions {
     agent?: Agent;

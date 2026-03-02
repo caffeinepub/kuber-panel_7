@@ -227,6 +227,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </p>
               </div>
             </div>
+            <div className="mt-2 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400" />
+              <span className="text-xs text-muted-foreground">Activated</span>
+            </div>
           </div>
         </div>
 
@@ -301,6 +305,17 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               </span>
             </Button>
           )}
+
+          <div className="ml-auto flex items-center gap-3">
+            {/* LIVE Platform Status */}
+            <div className="flex items-center gap-1.5 bg-green-500/10 border border-green-500/30 px-2.5 py-1 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              </span>
+              <span className="text-xs text-green-400 font-medium">LIVE</span>
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
@@ -439,13 +454,20 @@ function AdminHomeView({
 
   return (
     <div className="space-y-6 pb-6 animate-fade-in-up">
-      <div>
-        <h2 className="text-2xl font-display font-bold text-foreground mb-1">
-          Dashboard
-        </h2>
-        <p className="text-muted-foreground text-sm">
-          Select a module to get started
-        </p>
+      {/* Kuber Logo + Title */}
+      <div className="flex items-center gap-4">
+        <KuberLogo
+          size={56}
+          className="drop-shadow-[0_0_12px_oklch(0.82_0.18_85/0.6)] shrink-0"
+        />
+        <div>
+          <h2 className="text-2xl font-display font-bold text-foreground mb-0.5">
+            Dashboard
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Kuber Panel Start New Journey
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">

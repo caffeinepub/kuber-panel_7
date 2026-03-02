@@ -14,12 +14,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { syncActivateUser } from "@/lib/backend-sync";
 import {
   type BankAccount,
   type User,
   getBankAccounts,
   getUsers,
-  setUsers,
 } from "@/lib/storage";
 import { CheckCircle2, Eye, Users } from "lucide-react";
 import { useState } from "react";
@@ -30,11 +30,13 @@ export function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const handleActivate = (userId: string) => {
-    const updated = getUsers().map((u) =>
-      u.id === userId ? { ...u, isActivated: true } : u,
-    );
-    setUsers(updated);
-    setUsersState(updated);
+    const allUsers = getUsers();
+    const targetUser = allUsers.find((u) => u.id === userId);
+    if (targetUser) {
+      syncActivateUser(targetUser.email);
+    }
+    // Refresh local state from updated localStorage
+    setUsersState(getUsers());
     toast.success("User activated successfully!");
   };
 

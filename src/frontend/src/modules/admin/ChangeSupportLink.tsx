@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getSupportLink, setSupportLink } from "@/lib/storage";
+import { syncSetSupportLink } from "@/lib/backend-sync";
+import { getSupportLink } from "@/lib/storage";
 import { ExternalLink, Link2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -26,7 +27,7 @@ export function ChangeSupportLink() {
 
     setLoading(true);
     await new Promise((r) => setTimeout(r, 600));
-    setSupportLink(link.trim());
+    syncSetSupportLink(link.trim());
     setSaved(true);
     toast.success("Support link updated successfully!");
     setLoading(false);
