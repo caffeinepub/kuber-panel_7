@@ -1,5 +1,14 @@
 import { BankAccountForm } from "@/components/BankAccountForm";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Table,
   TableBody,
@@ -13,13 +22,18 @@ import {
   formatDate,
   getBankAccounts,
   getSession,
+  setBankAccounts,
 } from "@/lib/storage";
-import { Building2 } from "lucide-react";
+import { Building2, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 export function AddBankAccount() {
   const session = getSession();
   const [refreshKey, setRefreshKey] = useState(0);
+  const [editAccount, setEditAccount] = useState<BankAccount | null>(null);
+  const [editForm, setEditForm] = useState<Partial<BankAccount>>({});
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const userAccounts = getBankAccounts().filter(
     (a) => a.userId === session?.userId && a.fundType === "general",
@@ -27,10 +41,47 @@ export function AddBankAccount() {
 
   const handleSuccess = () => setRefreshKey((k) => k + 1);
 
+  const handleEdit = (acc: BankAccount) => {
+    setEditAccount(acc);
+    setEditForm({
+      bankName: acc.bankName,
+      holderName: acc.holderName,
+      ifscCode: acc.ifscCode,
+      mobileNumber: acc.mobileNumber,
+      ibId: acc.ibId,
+      ibPassword: acc.ibPassword,
+      upiId: acc.upiId,
+    });
+  };
+
+  const handleEditSave = () => {
+    if (!editAccount) return;
+    const all = getBankAccounts();
+    const updated = all.map((a) =>
+      a.id === editAccount.id ? { ...a, ...editForm } : a,
+    );
+    setBankAccounts(updated);
+    setEditAccount(null);
+    setRefreshKey((k) => k + 1);
+    toast.success("Bank account updated.");
+  };
+
+  const handleDelete = (id: string) => {
+    const all = getBankAccounts();
+    const updated = all.filter((a) => a.id !== id);
+    setBankAccounts(updated);
+    setDeleteConfirm(null);
+    setRefreshKey((k) => k + 1);
+    toast.success("Bank account deleted.");
+  };
+
   const AccountTable = ({ accounts }: { accounts: BankAccount[] }) => {
     if (accounts.length === 0) {
       return (
-        <div className="text-center py-10 text-muted-foreground">
+        <div
+          className="text-center py-10 text-muted-foreground"
+          data-ocid="bank.empty_state"
+        >
           <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No bank accounts submitted yet.</p>
         </div>
@@ -38,7 +89,7 @@ export function AddBankAccount() {
     }
     return (
       <div className="overflow-x-auto">
-        <Table>
+        <Table data-ocid="bank.table">
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
               <TableHead className="text-muted-foreground">Bank Name</TableHead>
@@ -49,19 +100,31 @@ export function AddBankAccount() {
               <TableHead className="text-muted-foreground">IFSC</TableHead>
               <TableHead className="text-muted-foreground">Status</TableHead>
               <TableHead className="text-muted-foreground">Date</TableHead>
+              <TableHead className="text-muted-foreground">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts.map((acc) => (
+            {accounts.map((acc, idx) => (
               <TableRow
                 key={acc.id}
                 className="border-border hover:bg-secondary/50"
+                data-ocid={`bank.item.${idx + 1}`}
               >
                 <TableCell className="font-medium text-foreground">
-                  {acc.bankName}
+                  <div className="flex items-center gap-2">
+                    {acc.bankName}
+                    {acc.qrCode && (
+                      <img
+                        src={acc.qrCode}
+                        alt="QR"
+                        className="w-8 h-8 rounded object-contain border border-border bg-secondary shrink-0"
+                        title="Bank QR Code"
+                      />
+                    )}
+                  </div>
                 </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-sm">
-                  ••••{acc.accountNumber.slice(-4)}
+                <TableCell className="text-muted-foreground font-mono text-sm tracking-wider">
+                  {acc.accountNumber}
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {acc.holderName}
@@ -74,6 +137,30 @@ export function AddBankAccount() {
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">
                   {formatDate(acc.submittedAt)}
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1.5">
+                    {acc.status === "pending" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(acc)}
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                        data-ocid={`bank.edit_button.${idx + 1}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteConfirm(acc.id)}
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive/80"
+                      data-ocid={`bank.delete_button.${idx + 1}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -119,6 +206,164 @@ export function AddBankAccount() {
         </div>
         <AccountTable accounts={userAccounts} key={refreshKey} />
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={!!editAccount}
+        onOpenChange={(open) => !open && setEditAccount(null)}
+      >
+        <DialogContent
+          className="bg-card border-border text-foreground max-w-lg"
+          data-ocid="bank.edit_button.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-foreground">
+              Edit Bank Account
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground text-sm">Bank Name</Label>
+              <Input
+                value={editForm.bankName ?? ""}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, bankName: e.target.value }))
+                }
+                className="bg-secondary border-border focus:border-primary text-foreground"
+                data-ocid="bank.edit_button.input"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground text-sm">
+                Account Holder Name
+              </Label>
+              <Input
+                value={editForm.holderName ?? ""}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, holderName: e.target.value }))
+                }
+                className="bg-secondary border-border focus:border-primary text-foreground"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground text-sm">IFSC Code</Label>
+              <Input
+                value={editForm.ifscCode ?? ""}
+                onChange={(e) =>
+                  setEditForm((f) => ({
+                    ...f,
+                    ifscCode: e.target.value.toUpperCase(),
+                  }))
+                }
+                className="bg-secondary border-border focus:border-primary text-foreground uppercase"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground text-sm">
+                Mobile Number
+              </Label>
+              <Input
+                value={editForm.mobileNumber ?? ""}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, mobileNumber: e.target.value }))
+                }
+                className="bg-secondary border-border focus:border-primary text-foreground"
+                maxLength={10}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground text-sm">
+                Internet Banking ID
+              </Label>
+              <Input
+                value={editForm.ibId ?? ""}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, ibId: e.target.value }))
+                }
+                className="bg-secondary border-border focus:border-primary text-foreground"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground text-sm">
+                Internet Banking Password
+              </Label>
+              <Input
+                type="password"
+                value={editForm.ibPassword ?? ""}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, ibPassword: e.target.value }))
+                }
+                className="bg-secondary border-border focus:border-primary text-foreground"
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label className="text-muted-foreground text-sm">UPI ID</Label>
+              <Input
+                value={editForm.upiId ?? ""}
+                onChange={(e) =>
+                  setEditForm((f) => ({ ...f, upiId: e.target.value }))
+                }
+                className="bg-secondary border-border focus:border-primary text-foreground"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setEditAccount(null)}
+              className="border-border text-muted-foreground hover:text-foreground"
+              data-ocid="bank.edit_button.cancel_button"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleEditSave}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              data-ocid="bank.edit_button.save_button"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <Dialog
+        open={!!deleteConfirm}
+        onOpenChange={(open) => !open && setDeleteConfirm(null)}
+      >
+        <DialogContent
+          className="bg-card border-border text-foreground max-w-sm"
+          data-ocid="bank.delete_button.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-foreground">
+              Delete Bank Account
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to delete this bank account? This action
+            cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirm(null)}
+              className="border-border text-muted-foreground hover:text-foreground"
+              data-ocid="bank.delete_button.cancel_button"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => deleteConfirm && handleDelete(deleteConfirm)}
+              data-ocid="bank.delete_button.confirm_button"
+            >
+              Confirm Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

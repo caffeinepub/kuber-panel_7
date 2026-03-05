@@ -5,9 +5,9 @@ import List "mo:core/List";
 import Float "mo:core/Float";
 import Iter "mo:core/Iter";
 import Time "mo:core/Time";
-import Migration "migration";
 
-(with migration = Migration.run)
+
+
 actor {
   type User = {
     id : Text;

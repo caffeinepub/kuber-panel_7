@@ -199,10 +199,10 @@ export function ActivationPanel({
         </h3>
         <div className="space-y-2">
           {[
-            "Gaming Fund (15% returns)",
-            "Stock Fund (30% returns)",
-            "Political Fund (30% returns)",
-            "Mix Fund (25% returns)",
+            "Gaming Fund (15% commission)",
+            "Stock Fund (30% commission)",
+            "Political Fund (30% commission)",
+            "Mix Fund (25% commission)",
             "Commission tracking & withdrawal",
             "Live activity feed",
             "Withdrawal requests",

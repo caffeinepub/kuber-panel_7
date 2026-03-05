@@ -137,7 +137,10 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
   const AccountTable = ({ accounts }: { accounts: BankAccount[] }) => {
     if (accounts.length === 0) {
       return (
-        <div className="text-center py-10 text-muted-foreground">
+        <div
+          className="text-center py-10 text-muted-foreground"
+          data-ocid="fund.empty_state"
+        >
           <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-30" />
           <p className="text-sm">No bank accounts for this fund yet.</p>
         </div>
@@ -145,7 +148,7 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
     }
     return (
       <div className="overflow-x-auto">
-        <Table>
+        <Table data-ocid="fund.table">
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
               <TableHead className="text-muted-foreground">Bank Name</TableHead>
@@ -161,19 +164,20 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {accounts.map((acc) => {
+            {accounts.map((acc, idx) => {
               const isEnabled = isTransactionOnForFund(acc, fundType);
               const isApproved = acc.status === "approved";
               return (
                 <TableRow
                   key={`${acc.id}-${fundType}`}
                   className="border-border hover:bg-secondary/50"
+                  data-ocid={`fund.item.${idx + 1}`}
                 >
                   <TableCell className="font-medium text-foreground">
                     {acc.bankName}
                   </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-sm">
-                    ••••{acc.accountNumber.slice(-4)}
+                    XX{acc.accountNumber.slice(-5)}
                   </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-sm">
                     {acc.ifscCode}
@@ -195,6 +199,7 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
                             ? "bg-green-500 hover:bg-green-600 text-white border-green-500"
                             : "border-muted-foreground/40 text-muted-foreground hover:border-green-500 hover:text-green-400"
                         }`}
+                        data-ocid={`fund.toggle.${idx + 1}`}
                       >
                         <Power className="w-3 h-3" />
                         {isEnabled ? "ON" : "OFF"}

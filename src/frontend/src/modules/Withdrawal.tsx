@@ -16,11 +16,15 @@ import {
 import {
   type BankAccount,
   generateId,
+  generateReferenceNumber,
   generateTransactionId,
+  generateUsdtTxHash,
+  generateUtrNumber,
   getAccumulatedCommission,
   getBankAccounts,
   getSession,
   getWithdrawals,
+  randomBranchName,
 } from "@/lib/storage";
 import { ArrowDownToLine, CheckCircle2, Loader2, Lock } from "lucide-react";
 import { useState } from "react";
@@ -121,16 +125,47 @@ export function Withdrawal({
     await new Promise((r) => setTimeout(r, 600));
 
     const now = new Date();
-    const withdrawal = {
+
+    // Build method-specific enrichment fields
+    let extraFields: Record<string, string | number> = {};
+    if (method === "upi") {
+      extraFields = {
+        transactionId: generateTransactionId("upi"),
+        referenceNumber: generateReferenceNumber("upi"),
+        upiVpa: details,
+      };
+    } else if (method === "bank") {
+      const isNeft = Math.random() < 0.5;
+      const mode = isNeft ? "NEFT" : "IMPS";
+      const txnId = isNeft
+        ? generateTransactionId("bank") // starts with NEFT...
+        : `IMPS${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(Math.floor(Math.random() * 1e12)).padStart(12, "0")}`;
+      extraFields = {
+        transactionId: txnId,
+        referenceNumber: generateReferenceNumber(isNeft ? "neft" : "imps"),
+        transferMode: mode,
+        bankBranch: randomBranchName(),
+        ...(isNeft ? { utrNumber: generateUtrNumber() } : {}),
+      };
+    } else if (method === "usdt") {
+      extraFields = {
+        transactionId: generateTransactionId("usdt"),
+        txHash: generateUsdtTxHash(),
+        networkFee: Math.round((0.5 + Math.random() * 2) * 100) / 100,
+      };
+    }
+
+    const baseWithdrawal = {
       id: generateId(),
       userId: session!.userId,
       method,
       amount: Number(amount),
       bankDetails: details,
-      transactionId: generateTransactionId(),
+      transactionId:
+        (extraFields.transactionId as string) || generateTransactionId(),
       date: now.toLocaleDateString("en-IN"),
       time: now.toLocaleTimeString("en-IN"),
-      status: "transfer_successful" as const, // Instantly approved
+      status: "transfer_successful" as const,
       ...(method === "bank" && selectedBank
         ? {
             bankName: selectedBank.bankName,
@@ -140,6 +175,8 @@ export function Withdrawal({
           }
         : {}),
     };
+
+    const withdrawal = { ...baseWithdrawal, ...extraFields };
 
     syncAddWithdrawal(withdrawal);
 
@@ -297,7 +334,7 @@ export function Withdrawal({
                     ) : (
                       approvedBanks.map((b) => (
                         <SelectItem key={b.id} value={b.id}>
-                          {b.bankName} — ••••{b.accountNumber.slice(-4)}
+                          {b.bankName} — {b.accountNumber}
                         </SelectItem>
                       ))
                     )}

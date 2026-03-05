@@ -2,9 +2,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { syncAddBankAccount } from "@/lib/backend-sync";
-import { type BankAccount, generateId, getSession } from "@/lib/storage";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { useState } from "react";
+import {
+  type BankAccount,
+  generateId,
+  getBankAccounts,
+  getSession,
+} from "@/lib/storage";
+import { Eye, EyeOff, Loader2, QrCode, X } from "lucide-react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface BankAccountFormProps {
@@ -38,10 +43,30 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
   const [form, setForm] = useState<FormData>(initial);
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
+  const qrInputRef = useRef<HTMLInputElement>(null);
 
   const set =
     (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file (JPG, PNG, WebP).");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Image must be smaller than 2MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setQrCode(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,12 +92,26 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
     }
 
     setLoading(true);
+
+    // Check duplicate: same account number for same user
+    const existingAccounts = getBankAccounts();
+    const duplicate = existingAccounts.find(
+      (a) =>
+        a.userId === session.userId && a.accountNumber === form.accountNumber,
+    );
+    if (duplicate) {
+      toast.error("This bank account is already added.");
+      setLoading(false);
+      return;
+    }
+
     await new Promise((r) => setTimeout(r, 600));
 
     const newAccount: BankAccount = {
       id: generateId(),
       userId: session.userId,
       ...form,
+      ...(qrCode ? { qrCode } : {}),
       fundType,
       status: "pending",
       submittedAt: new Date().toISOString(),
@@ -82,6 +121,7 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
 
     toast.success("Bank account submitted for approval!");
     setForm(initial);
+    setQrCode(null);
     setLoading(false);
     onSuccess?.();
   };
@@ -215,6 +255,63 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
             className="bg-secondary border-border focus:border-primary text-foreground placeholder:text-muted-foreground/50"
           />
         </div>
+      </div>
+
+      {/* Optional QR Code Upload */}
+      <div className="space-y-2 pt-1">
+        <div className="flex items-center gap-2">
+          <QrCode className="w-4 h-4 text-muted-foreground" />
+          <Label className="text-muted-foreground text-sm">
+            Bank QR Code{" "}
+            <span className="text-muted-foreground/50 text-xs">(Optional)</span>
+          </Label>
+        </div>
+        {qrCode ? (
+          <div className="flex items-center gap-3">
+            <img
+              src={qrCode}
+              alt="Bank QR Code"
+              className="w-20 h-20 object-contain rounded-lg border border-border bg-secondary"
+            />
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">QR code added</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQrCode(null);
+                  if (qrInputRef.current) qrInputRef.current.value = "";
+                }}
+                className="flex items-center gap-1 text-xs text-destructive hover:text-destructive/80 transition-colors"
+              >
+                <X className="w-3 h-3" />
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div>
+            <input
+              ref={qrInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleQrUpload}
+              className="hidden"
+              id="qr-upload"
+              data-ocid="bank.qr_upload_button"
+            />
+            <label
+              htmlFor="qr-upload"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dashed border-border bg-secondary/50 text-muted-foreground text-xs cursor-pointer hover:border-primary/50 hover:text-primary transition-colors"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              Upload QR Code Image
+            </label>
+            <p className="text-xs text-muted-foreground/50 mt-1">
+              JPG, PNG, WebP — max 2MB. Only upload if you want to add your bank
+              QR.
+            </p>
+          </div>
+        )}
       </div>
 
       <Button

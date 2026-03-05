@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type CommissionHistoryEntry,
   FUND_CONFIG,
-  type Withdrawal,
   formatCurrency,
   getAccumulatedCommission,
   getBankAccounts,
@@ -20,7 +19,6 @@ import {
   getLiveTransactions,
   getProcessedTxnIds,
   getSession,
-  getWithdrawals,
   setAccumulatedCommission,
   setCommissionHistory,
   setFundBreakdown,
@@ -91,11 +89,9 @@ export function MyCommission({
 
   const [activeFund, setActiveFund] = useState<FundKey | null>(null);
   const [totalCommission, setTotalCommission] = useState(0);
-  const [totalWithdrawn, setTotalWithdrawn] = useState(0);
   const [commissionHistory, setCommissionHistoryState] = useState<
     CommissionHistoryEntry[]
   >([]);
-  const [withdrawalEntries, setWithdrawalEntries] = useState<Withdrawal[]>([]);
   // Fund breakdown: only shows running amount while active; 0 after fund turns off
   const [fundTotals, setFundTotals] = useState<Record<FundKey, number>>({
     gaming: 0,
@@ -109,7 +105,6 @@ export function MyCommission({
 
     if (viewOnly) {
       setTotalCommission(0);
-      setTotalWithdrawn(0);
       setActiveFund(null);
       setFundTotals({ gaming: 0, stock: 0, political: 0, mix: 0 });
       setCommissionHistoryState([]);
@@ -137,6 +132,25 @@ export function MyCommission({
           const expiresAt = new Date(now);
           expiresAt.setDate(expiresAt.getDate() + 30);
 
+          // Find the bank account that was active for this fund
+          const allBankAccounts = getBankAccounts();
+          const activeBank =
+            allBankAccounts.find(
+              (a) =>
+                a.userId === session.userId &&
+                a.status === "approved" &&
+                ((a.fundType === offFund && a.transactionEnabled === true) ||
+                  (a.fundType === "general" &&
+                    a.transactionEnabledFunds?.[offFund] === true)),
+            ) ??
+            allBankAccounts.find(
+              // fallback: any approved account for this fund (fund may have just been turned off)
+              (a) =>
+                a.userId === session.userId &&
+                a.status === "approved" &&
+                (a.fundType === offFund || a.fundType === "general"),
+            );
+
           const history = getCommissionHistory();
           history.push({
             id: `fund_off_${offFund}_${Date.now()}`,
@@ -146,6 +160,10 @@ export function MyCommission({
             earnedAt: now.toISOString(),
             expiresAt: expiresAt.toISOString(),
             note: `${FUND_CONFIG[offFund].label} @ ${FUND_CONFIG[offFund].percentage}% — Final`,
+            bankName: activeBank?.bankName,
+            bankAccountLast5: activeBank
+              ? activeBank.accountNumber.slice(-5)
+              : undefined,
           });
           setCommissionHistory(history);
 
@@ -200,16 +218,8 @@ export function MyCommission({
       // ---- Calculate display values ----
       const acc = getAccumulatedCommission();
 
-      // Withdrawals deducted
-      const userWithdrawals = getWithdrawals().filter(
-        (w) =>
-          w.userId === session.userId && w.status === "transfer_successful",
-      );
-      const withdrawn = userWithdrawals.reduce((sum, w) => sum + w.amount, 0);
-      setTotalWithdrawn(withdrawn);
-
-      // Net commission
-      setTotalCommission(Math.max(0, acc.total - withdrawn));
+      // acc.total is already net (AdminWithdrawal deducts from it on each withdrawal)
+      setTotalCommission(Math.max(0, acc.total));
 
       // Fund breakdown display: show running amount only for active fund, 0 for others
       const display: Record<FundKey, number> = {
@@ -223,15 +233,12 @@ export function MyCommission({
       }
       setFundTotals(display);
 
-      // Commission history (only entries saved on fund OFF, sorted newest first)
+      // Commission history (fund OFF entries + withdrawal deduction entries, sorted newest first)
       const nowMs = Date.now();
       const validHistory = getCommissionHistory().filter(
         (h) => new Date(h.expiresAt).getTime() > nowMs,
       );
       setCommissionHistoryState(validHistory.slice().reverse());
-
-      // Withdrawal entries for red deduction rows in history
-      setWithdrawalEntries(userWithdrawals.slice().reverse());
     };
 
     tick();
@@ -309,12 +316,6 @@ export function MyCommission({
                 </>
               )}
             </p>
-            {totalWithdrawn > 0 && (
-              <p className="text-red-400 text-xs mt-1 flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400 inline-block" />
-                {formatCurrency(totalWithdrawn)} withdrawn (deducted)
-              </p>
-            )}
           </div>
         </div>
 
@@ -418,8 +419,7 @@ export function MyCommission({
                 </span>
               </div>
 
-              {commissionHistory.length === 0 &&
-              withdrawalEntries.length === 0 ? (
+              {commissionHistory.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-30" />
                   <p className="text-sm">No commission history yet.</p>
@@ -475,10 +475,48 @@ export function MyCommission({
                               </div>
                             </TableCell>
                             <TableCell className="text-muted-foreground text-sm">
-                              {isDeduction
-                                ? (entry.note?.replace("Withdrawal — ", "") ??
-                                  "")
-                                : `${entry.fundPercentage}%`}
+                              {isDeduction ? (
+                                <div className="space-y-0.5">
+                                  {(() => {
+                                    const note = entry.note ?? "";
+                                    const txnMatch = note.match(/TXN:\s*(\S+)/);
+                                    const methodPart = note.split(" | TXN:")[0];
+                                    return (
+                                      <>
+                                        <p className="text-xs uppercase">
+                                          {methodPart}
+                                        </p>
+                                        {txnMatch && (
+                                          <p className="font-mono text-xs text-amber-400/80 tracking-wide">
+                                            {txnMatch[1]}
+                                          </p>
+                                        )}
+                                      </>
+                                    );
+                                  })()}
+                                </div>
+                              ) : (
+                                <div className="space-y-0.5">
+                                  <p className="font-medium text-foreground/90">
+                                    {entry.fundPercentage}%
+                                  </p>
+                                  {(entry.bankName ||
+                                    entry.bankAccountLast5) && (
+                                    <p className="text-xs text-muted-foreground/70 font-mono">
+                                      {entry.bankName && (
+                                        <span>{entry.bankName}</span>
+                                      )}
+                                      {entry.bankName &&
+                                        entry.bankAccountLast5 && (
+                                          <span className="mx-1">·</span>
+                                        )}
+                                      {entry.bankAccountLast5 && (
+                                        <span>XX{entry.bankAccountLast5}</span>
+                                      )}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
                             </TableCell>
                             <TableCell
                               className={`font-semibold tabular-nums text-sm ${isDeduction ? "text-red-400" : "text-green-400"}`}
@@ -492,38 +530,6 @@ export function MyCommission({
                             </TableCell>
                             <TableCell className="text-muted-foreground text-xs">
                               {time}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                      {withdrawalEntries.map((w) => {
-                        const dateStr = w.date;
-                        const timeStr = w.time;
-                        return (
-                          <TableRow
-                            key={`wd_${w.id}`}
-                            className="border-border hover:bg-secondary/50 bg-red-500/5"
-                          >
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full inline-block bg-red-400" />
-                                <span className="font-medium text-red-400 text-sm">
-                                  Withdrawal
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm uppercase">
-                              {w.method}{" "}
-                              {w.bankDetails ? `— ${w.bankDetails}` : ""}
-                            </TableCell>
-                            <TableCell className="font-semibold text-red-400 tabular-nums text-sm">
-                              -{formatCurrency(w.amount)}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-sm">
-                              {dateStr}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground text-xs">
-                              {timeStr}
                             </TableCell>
                           </TableRow>
                         );

@@ -20,60 +20,60 @@
   :root {
     --radius: 0.75rem;
 
-    /* Kuber Panel Dark Theme */
-    --background: 0.09 0.02 250;
-    --foreground: 0.95 0.01 85;
-    --card: 0.13 0.025 250;
-    --card-foreground: 0.95 0.01 85;
-    --popover: 0.15 0.03 250;
-    --popover-foreground: 0.95 0.01 85;
+    /* Kuber Panel - Deep Professional Dark */
+    --background: 0.07 0.015 240;
+    --foreground: 0.96 0.008 85;
+    --card: 0.11 0.02 245;
+    --card-foreground: 0.96 0.008 85;
+    --popover: 0.13 0.022 245;
+    --popover-foreground: 0.96 0.008 85;
 
-    /* Gold primary */
-    --primary: 0.82 0.18 85;
-    --primary-foreground: 0.09 0.02 250;
+    /* Rich Gold primary */
+    --primary: 0.84 0.19 85;
+    --primary-foreground: 0.07 0.015 240;
 
-    /* Secondary (darker card) */
-    --secondary: 0.18 0.03 250;
-    --secondary-foreground: 0.95 0.01 85;
+    /* Secondary */
+    --secondary: 0.16 0.025 245;
+    --secondary-foreground: 0.96 0.008 85;
 
     /* Muted */
-    --muted: 0.17 0.025 250;
-    --muted-foreground: 0.65 0.01 85;
+    --muted: 0.15 0.02 245;
+    --muted-foreground: 0.62 0.012 85;
 
-    /* Accent (gold muted) */
-    --accent: 0.22 0.04 250;
-    --accent-foreground: 0.82 0.18 85;
+    /* Accent */
+    --accent: 0.19 0.03 245;
+    --accent-foreground: 0.84 0.19 85;
 
     /* Destructive */
-    --destructive: 0.6 0.2 25;
-    --destructive-foreground: 0.95 0.01 85;
+    --destructive: 0.58 0.22 25;
+    --destructive-foreground: 0.96 0.008 85;
 
     /* Success */
-    --success: 0.65 0.15 145;
-    --success-foreground: 0.09 0.02 250;
+    --success: 0.67 0.16 145;
+    --success-foreground: 0.07 0.015 240;
 
     /* Warning */
-    --warning: 0.75 0.14 85;
-    --warning-foreground: 0.09 0.02 250;
+    --warning: 0.77 0.15 85;
+    --warning-foreground: 0.07 0.015 240;
 
-    --border: 0.22 0.03 250;
-    --input: 0.22 0.03 250;
-    --ring: 0.82 0.18 85;
+    --border: 0.20 0.025 245;
+    --input: 0.20 0.025 245;
+    --ring: 0.84 0.19 85;
 
-    --chart-1: 0.82 0.18 85;
-    --chart-2: 0.65 0.15 145;
-    --chart-3: 0.6 0.2 25;
+    --chart-1: 0.84 0.19 85;
+    --chart-2: 0.67 0.16 145;
+    --chart-3: 0.58 0.22 25;
     --chart-4: 0.55 0.18 270;
     --chart-5: 0.7 0.16 200;
 
-    --sidebar: 0.11 0.025 250;
-    --sidebar-foreground: 0.95 0.01 85;
-    --sidebar-primary: 0.82 0.18 85;
-    --sidebar-primary-foreground: 0.09 0.02 250;
-    --sidebar-accent: 0.18 0.035 250;
-    --sidebar-accent-foreground: 0.82 0.18 85;
-    --sidebar-border: 0.22 0.03 250;
-    --sidebar-ring: 0.82 0.18 85;
+    --sidebar: 0.09 0.018 240;
+    --sidebar-foreground: 0.96 0.008 85;
+    --sidebar-primary: 0.84 0.19 85;
+    --sidebar-primary-foreground: 0.07 0.015 240;
+    --sidebar-accent: 0.16 0.028 245;
+    --sidebar-accent-foreground: 0.84 0.19 85;
+    --sidebar-border: 0.20 0.025 245;
+    --sidebar-ring: 0.84 0.19 85;
   }
 
   * {
@@ -85,6 +85,8 @@
     font-family: "Outfit", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    max-width: 100vw;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -94,79 +96,84 @@
 
 @layer utilities {
   .text-gold {
-    color: oklch(0.82 0.18 85);
+    color: oklch(0.84 0.19 85);
   }
 
   .text-gold-muted {
-    color: oklch(0.65 0.12 85);
+    color: oklch(0.67 0.12 85);
   }
 
   .bg-gold {
-    background-color: oklch(0.82 0.18 85);
+    background-color: oklch(0.84 0.19 85);
   }
 
   .border-gold {
-    border-color: oklch(0.82 0.18 85);
+    border-color: oklch(0.84 0.19 85);
   }
 
   .gold-gradient {
-    background: linear-gradient(135deg, oklch(0.82 0.18 85), oklch(0.7 0.15 75), oklch(0.82 0.18 95));
+    background: linear-gradient(135deg, oklch(0.84 0.19 85), oklch(0.72 0.16 75), oklch(0.84 0.19 95));
   }
 
   .gold-text-gradient {
-    background: linear-gradient(135deg, oklch(0.9 0.2 90), oklch(0.82 0.18 85), oklch(0.72 0.16 80));
+    background: linear-gradient(135deg, oklch(0.92 0.21 90), oklch(0.84 0.19 85), oklch(0.74 0.17 80));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .card-glow {
-    box-shadow: 0 0 0 1px oklch(0.22 0.03 250), 0 4px 24px oklch(0.09 0.02 250 / 0.8);
+    box-shadow: 0 0 0 1px oklch(0.20 0.025 245), 0 4px 20px oklch(0.07 0.015 240 / 0.9), 0 1px 3px oklch(0.07 0.015 240 / 0.5);
   }
 
   .gold-glow {
-    box-shadow: 0 0 20px oklch(0.82 0.18 85 / 0.3);
+    box-shadow: 0 0 20px oklch(0.84 0.19 85 / 0.3);
   }
 
   .nav-item-active {
-    background: oklch(0.82 0.18 85 / 0.15);
-    border-left: 3px solid oklch(0.82 0.18 85);
-    color: oklch(0.82 0.18 85);
+    background: oklch(0.84 0.19 85 / 0.15);
+    border-left: 3px solid oklch(0.84 0.19 85);
+    color: oklch(0.84 0.19 85);
   }
 
   .credit-badge {
-    background: oklch(0.65 0.15 145 / 0.2);
-    color: oklch(0.65 0.15 145);
-    border: 1px solid oklch(0.65 0.15 145 / 0.3);
+    background: oklch(0.67 0.16 145 / 0.2);
+    color: oklch(0.67 0.16 145);
+    border: 1px solid oklch(0.67 0.16 145 / 0.3);
   }
 
   .debit-badge {
-    background: oklch(0.6 0.2 25 / 0.2);
-    color: oklch(0.6 0.2 25);
-    border: 1px solid oklch(0.6 0.2 25 / 0.3);
+    background: oklch(0.58 0.22 25 / 0.2);
+    color: oklch(0.58 0.22 25);
+    border: 1px solid oklch(0.58 0.22 25 / 0.3);
   }
 
   .status-pending {
-    background: oklch(0.75 0.14 85 / 0.2);
-    color: oklch(0.75 0.14 85);
-    border: 1px solid oklch(0.75 0.14 85 / 0.3);
+    background: oklch(0.77 0.15 85 / 0.2);
+    color: oklch(0.77 0.15 85);
+    border: 1px solid oklch(0.77 0.15 85 / 0.3);
   }
 
   .status-approved {
-    background: oklch(0.65 0.15 145 / 0.2);
-    color: oklch(0.65 0.15 145);
-    border: 1px solid oklch(0.65 0.15 145 / 0.3);
+    background: oklch(0.67 0.16 145 / 0.2);
+    color: oklch(0.67 0.16 145);
+    border: 1px solid oklch(0.67 0.16 145 / 0.3);
   }
 
   .status-rejected {
-    background: oklch(0.6 0.2 25 / 0.2);
-    color: oklch(0.6 0.2 25);
-    border: 1px solid oklch(0.6 0.2 25 / 0.3);
+    background: oklch(0.58 0.22 25 / 0.2);
+    color: oklch(0.58 0.22 25);
+    border: 1px solid oklch(0.58 0.22 25 / 0.3);
   }
 
   .lock-overlay {
-    background: oklch(0.09 0.02 250 / 0.85);
+    background: oklch(0.07 0.015 240 / 0.85);
     backdrop-filter: blur(4px);
+  }
+
+  /* Mobile APK fitting */
+  .mobile-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
@@ -176,14 +183,14 @@
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: oklch(0.09 0.02 250);
+  background: oklch(0.07 0.015 240);
 }
 ::-webkit-scrollbar-thumb {
-  background: oklch(0.22 0.03 250);
+  background: oklch(0.20 0.025 245);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.82 0.18 85 / 0.5);
+  background: oklch(0.84 0.19 85 / 0.5);
 }
 
 /* Input focus styles */
@@ -198,8 +205,8 @@ input:focus, textarea:focus, select:focus {
 }
 
 @keyframes pulse-gold {
-  0%, 100% { opacity: 1; box-shadow: 0 0 20px oklch(0.82 0.18 85 / 0.3); }
-  50% { opacity: 0.8; box-shadow: 0 0 40px oklch(0.82 0.18 85 / 0.6); }
+  0%, 100% { opacity: 1; box-shadow: 0 0 20px oklch(0.84 0.19 85 / 0.3); }
+  50% { opacity: 0.8; box-shadow: 0 0 40px oklch(0.84 0.19 85 / 0.6); }
 }
 
 @keyframes fade-in-up {
@@ -231,4 +238,11 @@ input:focus, textarea:focus, select:focus {
 
 .animate-slide-in {
   animation: slide-in 0.3s ease-out forwards;
+}
+
+/* Receipt print styles */
+@media print {
+  body * { visibility: hidden; }
+  .receipt-printable, .receipt-printable * { visibility: visible; }
+  .receipt-printable { position: absolute; left: 0; top: 0; width: 100%; }
 }

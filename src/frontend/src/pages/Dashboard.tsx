@@ -14,6 +14,7 @@ import {
   ArrowDownToLine,
   BarChart3,
   Building2,
+  ChevronLeft,
   ChevronRight,
   Gamepad2,
   History,
@@ -121,89 +122,111 @@ const MODULE_CARDS = [
     id: "bank" as Module,
     label: "Add Bank Account",
     icon: Building2,
-    desc: "Link your bank for transactions",
-    color: "from-blue-500/20 to-blue-500/5",
-    border: "border-blue-500/30",
+    desc: "Link your bank",
+    color: "from-[#1a3a5c] to-[#0f2035]",
+    border: "border-[#2a6496]/50",
+    iconBg: "bg-[#1e6bb8]/30",
+    iconColor: "text-[#4fa8e8]",
   },
   {
     id: "gaming" as Module,
     label: "Gaming Fund",
     icon: Gamepad2,
     desc: "15% commission",
-    color: "from-purple-500/20 to-purple-500/5",
-    border: "border-purple-500/30",
+    color: "from-[#3a1a5c] to-[#1f0f35]",
+    border: "border-[#7c3aed]/50",
+    iconBg: "bg-[#7c3aed]/30",
+    iconColor: "text-[#a78bfa]",
   },
   {
     id: "stock" as Module,
     label: "Stock Fund",
     icon: TrendingUp,
     desc: "30% commission",
-    color: "from-cyan-500/20 to-cyan-500/5",
-    border: "border-cyan-500/30",
+    color: "from-[#0f3a2a] to-[#071a12]",
+    border: "border-[#059669]/50",
+    iconBg: "bg-[#059669]/30",
+    iconColor: "text-[#34d399]",
   },
   {
     id: "political" as Module,
     label: "Political Fund",
     icon: Landmark,
     desc: "30% commission",
-    color: "from-red-500/20 to-red-500/5",
-    border: "border-red-500/30",
+    color: "from-[#3a1010] to-[#1f0707]",
+    border: "border-[#dc2626]/50",
+    iconBg: "bg-[#dc2626]/30",
+    iconColor: "text-[#f87171]",
   },
   {
     id: "mix" as Module,
     label: "Mix Fund",
     icon: Shuffle,
     desc: "25% commission",
-    color: "from-green-500/20 to-green-500/5",
-    border: "border-green-500/30",
+    color: "from-[#1a3a1a] to-[#0f200f]",
+    border: "border-[#16a34a]/50",
+    iconBg: "bg-[#16a34a]/30",
+    iconColor: "text-[#4ade80]",
   },
   {
     id: "commission" as Module,
     label: "My Commission",
     icon: BarChart3,
     desc: "Track your earnings",
-    color: "from-yellow-500/20 to-yellow-500/5",
-    border: "border-yellow-500/30",
+    color: "from-[#3a2e0a] to-[#1f1905]",
+    border: "border-[#d97706]/50",
+    iconBg: "bg-[#d97706]/30",
+    iconColor: "text-[#fbbf24]",
   },
   {
     id: "activity" as Module,
     label: "Live Fund Activity",
     icon: Activity,
     desc: "Real-time transactions",
-    color: "from-emerald-500/20 to-emerald-500/5",
-    border: "border-emerald-500/30",
+    color: "from-[#0a3a2a] to-[#051f15]",
+    border: "border-[#10b981]/50",
+    iconBg: "bg-[#10b981]/30",
+    iconColor: "text-[#34d399]",
   },
   {
     id: "withdrawal" as Module,
     label: "Withdrawal",
     icon: ArrowDownToLine,
     desc: "View withdrawal info",
-    color: "from-orange-500/20 to-orange-500/5",
-    border: "border-orange-500/30",
+    color: "from-[#3a1a0a] to-[#1f0d05]",
+    border: "border-[#ea580c]/50",
+    iconBg: "bg-[#ea580c]/30",
+    iconColor: "text-[#fb923c]",
   },
   {
     id: "history" as Module,
     label: "Withdrawal History",
     icon: History,
     desc: "30 day history",
-    color: "from-slate-500/20 to-slate-500/5",
-    border: "border-slate-500/30",
+    color: "from-[#1a1a2e] to-[#0d0d1a]",
+    border: "border-[#6366f1]/50",
+    iconBg: "bg-[#6366f1]/30",
+    iconColor: "text-[#a5b4fc]",
   },
   {
     id: "support" as Module,
     label: "Help Support",
     icon: MessageCircle,
     desc: "Get instant help",
-    color: "from-sky-500/20 to-sky-500/5",
-    border: "border-sky-500/30",
+    color: "from-[#0a2a3a] to-[#05151f]",
+    border: "border-[#0ea5e9]/50",
+    iconBg: "bg-[#0ea5e9]/30",
+    iconColor: "text-[#38bdf8]",
   },
   {
     id: "activation" as Module,
     label: "Activation Panel",
     icon: Shield,
     desc: "Unlock all features",
-    color: "from-amber-500/20 to-amber-500/5",
-    border: "border-amber-500/30",
+    color: "from-[#3a2a0a] to-[#1f1505]",
+    border: "border-[#f59e0b]/50",
+    iconBg: "bg-[#f59e0b]/30",
+    iconColor: "text-[#fcd34d]",
   },
 ];
 
@@ -259,7 +282,12 @@ export function Dashboard({ onLogout }: DashboardProps) {
           />
         );
       case "activity":
-        return <LiveActivity isActivated={isActivated} />;
+        return (
+          <LiveActivity
+            isActivated={isActivated}
+            isAdmin={session?.isAdmin ?? false}
+          />
+        );
       case "withdrawal":
         return <Withdrawal isActivated={isActivated} isUserMode={true} />;
       case "history":
@@ -451,7 +479,21 @@ export function Dashboard({ onLogout }: DashboardProps) {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-20 lg:pb-6">
+          {currentModule !== "home" && (
+            <div className="mb-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("home")}
+                className="text-muted-foreground hover:text-foreground gap-2 pl-0"
+                data-ocid="dashboard.back_to_home_button"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Dashboard
+              </Button>
+            </div>
+          )}
           {renderModule()}
         </main>
 
@@ -557,10 +599,12 @@ function HomeView({
                 </div>
               )}
               <div className={locked ? "opacity-40" : ""}>
-                <div className="w-9 h-9 rounded-lg bg-black/20 flex items-center justify-center mb-3">
+                <div
+                  className={`w-10 h-10 rounded-xl ${card.iconBg} flex items-center justify-center mb-3`}
+                >
                   <card.icon
-                    className="w-4.5 h-4.5 text-foreground"
-                    style={{ width: 18, height: 18 }}
+                    className={card.iconColor}
+                    style={{ width: 20, height: 20 }}
                   />
                 </div>
                 <p className="text-sm font-semibold text-foreground leading-tight">

@@ -75,6 +75,7 @@ export function AdminWithdrawal() {
     await new Promise((r) => setTimeout(r, 700));
 
     const now = new Date();
+    const txnId = generateTransactionId();
 
     // Deduct from accumulated commission
     const acc = getAccumulatedCommission();
@@ -82,7 +83,7 @@ export function AdminWithdrawal() {
     acc.lastUpdated = now.toISOString();
     setAccumulatedCommission(acc);
 
-    // Add red deduction entry to commission history
+    // Add red deduction entry to commission history (includes txn ID)
     const expiresAt = new Date(now);
     expiresAt.setDate(expiresAt.getDate() + 30);
     const deductionEntry: CommissionHistoryEntry = {
@@ -92,7 +93,7 @@ export function AdminWithdrawal() {
       amount: -withdrawAmount,
       earnedAt: now.toISOString(),
       expiresAt: expiresAt.toISOString(),
-      note: `Withdrawal — ${method.toUpperCase()}${details ? ` (${details})` : ""}`,
+      note: `${method.toUpperCase()}${details ? ` — ${details}` : ""} | TXN: ${txnId}`,
     };
     const history = getCommissionHistory();
     setCommissionHistory([...history, deductionEntry]);
@@ -103,7 +104,7 @@ export function AdminWithdrawal() {
       method,
       amount: withdrawAmount,
       bankDetails: details,
-      transactionId: generateTransactionId(),
+      transactionId: txnId,
       date: now.toLocaleDateString("en-IN"),
       time: now.toLocaleTimeString("en-IN"),
       status: "transfer_successful",

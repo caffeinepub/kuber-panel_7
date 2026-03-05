@@ -22,6 +22,7 @@ export interface BankAccount {
   ibId: string;
   ibPassword: string;
   upiId: string;
+  qrCode?: string; // optional base64 QR code image
   fundType: "general" | "gaming" | "stock" | "political" | "mix";
   status: "pending" | "approved" | "rejected";
   submittedAt: string;
@@ -53,6 +54,15 @@ export interface Withdrawal {
   accountNumber?: string;
   holderName?: string;
   ifscCode?: string;
+  // Enhanced real-looking transfer details
+  referenceNumber?: string; // NEFT RRN / IMPS ref / UPI ref
+  upiVpa?: string; // UPI ID used (payer VPA)
+  txHash?: string; // USDT TxHash
+  networkFee?: number; // USDT network fee
+  payerName?: string; // Name of payer
+  bankBranch?: string; // Bank branch for NEFT/IMPS
+  transferMode?: string; // NEFT or IMPS for bank transfers
+  utrNumber?: string; // UTR for NEFT
 }
 
 export interface LiveTransaction {
@@ -87,6 +97,8 @@ export interface CommissionHistoryEntry {
   earnedAt: string; // ISO timestamp
   expiresAt: string; // ISO timestamp 30 days later
   note: string; // e.g. "Gaming Fund @ 15%"
+  bankName?: string; // bank name used when commission was earned
+  bankAccountLast5?: string; // last 5 digits of account number
 }
 
 // Fund-wise running totals (while fund is active - resets to 0 when fund turns OFF)
@@ -222,8 +234,100 @@ export function generateActivationCode(): string {
   return code;
 }
 
-export function generateTransactionId(): string {
-  return `TXN${Date.now().toString().slice(-8)}${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+const BANK_CODES = ["HDFC", "SBIN", "ICIC", "AXIS", "KOTAK"] as const;
+type BankCode = (typeof BANK_CODES)[number];
+
+function randomBankCode(): BankCode {
+  return BANK_CODES[Math.floor(Math.random() * BANK_CODES.length)];
+}
+
+function getDateStamp(): string {
+  const now = new Date();
+  const yy = String(now.getFullYear()).slice(-2);
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yy}${mm}${dd}`;
+}
+
+function randomDigits(n: number): string {
+  let s = "";
+  for (let i = 0; i < n; i++) s += Math.floor(Math.random() * 10).toString();
+  return s;
+}
+
+export function generateTransactionId(
+  method?: "upi" | "bank" | "usdt",
+): string {
+  const ds = getDateStamp();
+  const bankCode = randomBankCode();
+  if (method === "upi") {
+    return `UPI${ds}${randomDigits(12)}`;
+  }
+  if (method === "bank") {
+    // randomly NEFT or IMPS
+    const mode = Math.random() < 0.5 ? "NEFT" : "IMPS";
+    if (mode === "NEFT") {
+      return `NEFT${ds}${bankCode}${randomDigits(9)}`;
+    }
+    return `IMPS${ds}${randomDigits(12)}`;
+  }
+  if (method === "usdt") {
+    return `USDT${ds}${randomDigits(12)}`;
+  }
+  // legacy default
+  const prefixes = ["IMPS", "NEFT", "RTGS"];
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+  const ref = Math.floor(100000 + Math.random() * 900000).toString();
+  return `${prefix}${ds}${hh}${min}${bankCode}${ref}`;
+}
+
+export function generateReferenceNumber(mode: "upi" | "neft" | "imps"): string {
+  const ds = getDateStamp();
+  const bankCode = randomBankCode();
+  if (mode === "upi") {
+    return `UPI/${ds}/${randomDigits(9)}/${bankCode}`;
+  }
+  if (mode === "neft") {
+    return `${ds}${randomDigits(6)}`;
+  }
+  // imps
+  return randomDigits(12);
+}
+
+export function generateUtrNumber(): string {
+  const bankCode = randomBankCode();
+  const ds = getDateStamp();
+  const seq = randomDigits(8);
+  return `${bankCode}${ds}${seq.padStart(8, "0")}`;
+}
+
+export function generateUsdtTxHash(): string {
+  const hex = "0123456789abcdef";
+  let hash = "0x";
+  for (let i = 0; i < 64; i++) {
+    hash += hex[Math.floor(Math.random() * hex.length)];
+  }
+  return hash;
+}
+
+export function getTransferMode(transactionId: string): "NEFT" | "IMPS" {
+  return transactionId.startsWith("NEFT") ? "NEFT" : "IMPS";
+}
+
+const BRANCH_NAMES = [
+  "Main Branch",
+  "City Branch",
+  "Sector 12 Branch",
+  "Market Road Branch",
+  "Commercial Branch",
+  "Industrial Area Branch",
+];
+
+export function randomBranchName(): string {
+  return BRANCH_NAMES[Math.floor(Math.random() * BRANCH_NAMES.length)];
 }
 
 export function formatCurrency(amount: number): string {
