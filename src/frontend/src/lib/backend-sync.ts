@@ -410,16 +410,41 @@ export function syncAddLiveTransaction(txn: LiveTransaction): void {
   }
 }
 
-export function syncGenerateActivationCode(code: string): void {
+export function syncGenerateActivationCode(
+  code: string,
+  fundType?: string,
+): void {
   const newEntry: ActivationCode = {
     code,
     isUsed: false,
     generatedAt: new Date().toISOString(),
+    fundType: (fundType as ActivationCode["fundType"]) ?? "all",
   };
   const all = getActivationCodes();
   setActivationCodes([...all, newEntry]);
   getActor()
     .then((actor) => actor.generateActivationCode(code))
+    .catch(() => {});
+}
+
+export function syncActivateUserFund(email: string, fundType: string): void {
+  const users = getUsers();
+  const updated = users.map((u) => {
+    if (u.email.toLowerCase() !== email.toLowerCase()) return u;
+    const newFunds = { ...(u.activatedFunds ?? {}) };
+    if (fundType === "all") {
+      newFunds.gaming = true;
+      newFunds.stock = true;
+      newFunds.political = true;
+      newFunds.mix = true;
+    } else {
+      (newFunds as Record<string, boolean>)[fundType] = true;
+    }
+    return { ...u, isActivated: true, activatedFunds: newFunds };
+  });
+  setUsers(updated);
+  getActor()
+    .then((actor) => actor.activateUser(email))
     .catch(() => {});
 }
 

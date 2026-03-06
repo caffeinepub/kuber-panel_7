@@ -9,6 +9,12 @@ export interface User {
   password: string;
   isActivated: boolean;
   activationCode?: string;
+  activatedFunds?: {
+    gaming?: boolean;
+    stock?: boolean;
+    political?: boolean;
+    mix?: boolean;
+  };
 }
 
 export interface BankAccount {
@@ -38,6 +44,7 @@ export interface ActivationCode {
   isUsed: boolean;
   usedBy?: string;
   generatedAt: string;
+  fundType?: "gaming" | "stock" | "political" | "mix" | "all";
 }
 
 export interface Withdrawal {
@@ -224,7 +231,7 @@ export function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-export function generateActivationCode(): string {
+export function generateActivationCode(_fundType?: string): string {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let code = "";
   for (let i = 0; i < 12; i++) {

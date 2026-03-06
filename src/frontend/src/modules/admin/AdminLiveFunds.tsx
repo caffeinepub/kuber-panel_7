@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   FUND_CONFIG,
@@ -5,8 +6,9 @@ import {
   formatCurrency,
   getLiveTransactions,
 } from "@/lib/storage";
-import { Activity } from "lucide-react";
+import { Activity, Download } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type FundKey = "gaming" | "stock" | "political" | "mix";
 
@@ -94,6 +96,161 @@ function FundTransactionFeed({ fundType }: { fundType: FundKey }) {
   );
 }
 
+function downloadBankStatement() {
+  const allTxns = getLiveTransactions()
+    .slice()
+    .sort(
+      (a, b) =>
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+    );
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  const timeStr = now.toLocaleTimeString("en-IN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  let totalCredit = 0;
+  let totalDebit = 0;
+
+  const rows = allTxns
+    .map((txn, i) => {
+      const d = new Date(txn.timestamp);
+      const txnDate = d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+      const txnTime = d.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
+      const refNum = txn.id.toUpperCase().replace(/-/g, "").slice(0, 16);
+      const fundLabel = FUND_CONFIG[txn.fundType]?.label ?? txn.fundType;
+      const amtStr = formatCurrency(txn.amount);
+      const isCredit = txn.type === "credit";
+      if (isCredit) totalCredit += txn.amount;
+      else totalDebit += txn.amount;
+
+      return `<tr style="background:${i % 2 === 0 ? "#fff" : "#f9fafb"}">
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:center;color:#6b7280;font-size:12px">${i + 1}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">${txnDate}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">${txnTime}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-size:12px">${fundLabel} — ${isCredit ? "Amount Credited" : "Amount Debited"}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;color:#dc2626;font-weight:600;font-size:12px">${isCredit ? "" : amtStr}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;text-align:right;color:#16a34a;font-weight:600;font-size:12px">${isCredit ? amtStr : ""}</td>
+        <td style="padding:8px 10px;border-bottom:1px solid #e5e7eb;font-family:monospace;font-size:11px;color:#6b7280">${refNum}</td>
+      </tr>`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>Kuber Panel — Account Statement</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #fff; color: #111; padding: 32px; }
+    .header { border-bottom: 3px solid #c8940a; padding-bottom: 16px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .header-left h1 { font-size: 22px; font-weight: 800; color: #c8940a; letter-spacing: 2px; }
+    .header-left p { font-size: 12px; color: #666; margin-top: 2px; }
+    .header-right { text-align: right; }
+    .header-right p { font-size: 12px; color: #555; }
+    .account-info { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .account-info .field { }
+    .account-info .field label { font-size: 11px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+    .account-info .field p { font-size: 13px; font-weight: 600; color: #111; margin-top: 2px; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th { background: #1a1a1a; color: #c8940a; padding: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; }
+    th:nth-child(5), th:nth-child(6) { text-align: right; }
+    .summary { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; margin-bottom: 20px; }
+    .summary-item label { font-size: 11px; color: #9ca3af; text-transform: uppercase; }
+    .summary-item p { font-size: 16px; font-weight: 800; margin-top: 2px; }
+    .summary-item.credit p { color: #16a34a; }
+    .summary-item.debit p { color: #dc2626; }
+    .footer { border-top: 1px solid #e5e7eb; padding-top: 14px; text-align: center; font-size: 11px; color: #9ca3af; }
+    @media print { body { padding: 16px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>KUBER PANEL</h1>
+      <p>Financial Management Platform — Account Statement</p>
+    </div>
+    <div class="header-right">
+      <p>Generated: ${dateStr} at ${timeStr}</p>
+      <p>Statement Period: All Transactions</p>
+    </div>
+  </div>
+
+  <div class="account-info">
+    <div class="field"><label>Account Name</label><p>Kuber Panel</p></div>
+    <div class="field"><label>Statement Type</label><p>Live Fund Activity</p></div>
+    <div class="field"><label>Total Transactions</label><p>${allTxns.length}</p></div>
+    <div class="field"><label>Currency</label><p>INR (₹)</p></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px">SR</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Description</th>
+        <th style="text-align:right">Debit (DR)</th>
+        <th style="text-align:right">Credit (CR)</th>
+        <th>Reference No.</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows || '<tr><td colspan="7" style="text-align:center;padding:20px;color:#9ca3af">No transactions found</td></tr>'}
+    </tbody>
+  </table>
+
+  <div class="summary">
+    <div class="summary-item credit">
+      <label>Total Credits</label>
+      <p>${formatCurrency(totalCredit)}</p>
+    </div>
+    <div class="summary-item debit">
+      <label>Total Debits</label>
+      <p>${formatCurrency(totalDebit)}</p>
+    </div>
+    <div class="summary-item">
+      <label>Net Amount</label>
+      <p style="color:${totalCredit - totalDebit >= 0 ? "#16a34a" : "#dc2626"}">${formatCurrency(Math.abs(totalCredit - totalDebit))}</p>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>This is a computer-generated statement. No signature required.</p>
+    <p>© ${new Date().getFullYear()} Kuber Panel. All rights reserved.</p>
+  </div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `KuberPanel-Statement-${Date.now()}.html`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast.success("Bank statement downloaded!");
+}
+
 export function AdminLiveFunds() {
   const [activeFund, setActiveFund] = useState<FundKey>("gaming");
 
@@ -113,9 +270,21 @@ export function AdminLiveFunds() {
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-sm text-green-400 font-medium">Live</span>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={downloadBankStatement}
+            className="gap-2 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary font-semibold text-xs"
+            data-ocid="admin_live_funds.download_statement_button"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Download Statement
+          </Button>
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-sm text-green-400 font-medium">Live</span>
+          </div>
         </div>
       </div>
 

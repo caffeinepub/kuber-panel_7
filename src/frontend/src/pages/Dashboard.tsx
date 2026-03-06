@@ -1,6 +1,12 @@
 import { KuberLogo } from "@/components/KuberLogo";
 import { Button } from "@/components/ui/button";
-import { FUND_CONFIG, getSession, getUsers, setSession } from "@/lib/storage";
+import {
+  FUND_CONFIG,
+  type User,
+  getSession,
+  getUsers,
+  setSession,
+} from "@/lib/storage";
 import { ActivationPanel } from "@/modules/ActivationPanel";
 import { AddBankAccount } from "@/modules/AddBankAccount";
 import { FundModule } from "@/modules/FundModule";
@@ -235,16 +241,38 @@ export function Dashboard({ onLogout }: DashboardProps) {
   const [currentModule, setCurrentModule] = useState<Module>("home");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isActivated, setIsActivated] = useState(false);
+  const [activatedFunds, setActivatedFunds] =
+    useState<User["activatedFunds"]>(undefined);
 
   const refreshActivation = useCallback(() => {
     if (!session) return;
     if (session.isAdmin) {
       setIsActivated(true);
+      setActivatedFunds({
+        gaming: true,
+        stock: true,
+        political: true,
+        mix: true,
+      });
       return;
     }
     const users = getUsers();
     const user = users.find((u) => u.id === session.userId);
-    setIsActivated(user?.isActivated ?? false);
+    const activated = user?.isActivated ?? false;
+    setIsActivated(activated);
+    // Backward compat: if activated but no activatedFunds set, assume all funds active
+    if (activated && user?.activatedFunds) {
+      setActivatedFunds(user.activatedFunds);
+    } else if (activated && !user?.activatedFunds) {
+      setActivatedFunds({
+        gaming: true,
+        stock: true,
+        political: true,
+        mix: true,
+      });
+    } else {
+      setActivatedFunds(undefined);
+    }
   }, [session]);
 
   useEffect(() => {
@@ -261,18 +289,38 @@ export function Dashboard({ onLogout }: DashboardProps) {
     setSidebarOpen(false);
   };
 
+  // Per-fund activation: admin always has all, users use per-fund state
+  const isFundActivated = (fund: "gaming" | "stock" | "political" | "mix") => {
+    if (session?.isAdmin) return true;
+    return activatedFunds?.[fund] ?? false;
+  };
+
   const renderModule = () => {
     switch (currentModule) {
       case "bank":
         return <AddBankAccount />;
       case "gaming":
-        return <FundModule fundType="gaming" isActivated={isActivated} />;
+        return (
+          <FundModule
+            fundType="gaming"
+            isActivated={isFundActivated("gaming")}
+          />
+        );
       case "stock":
-        return <FundModule fundType="stock" isActivated={isActivated} />;
+        return (
+          <FundModule fundType="stock" isActivated={isFundActivated("stock")} />
+        );
       case "political":
-        return <FundModule fundType="political" isActivated={isActivated} />;
+        return (
+          <FundModule
+            fundType="political"
+            isActivated={isFundActivated("political")}
+          />
+        );
       case "mix":
-        return <FundModule fundType="mix" isActivated={isActivated} />;
+        return (
+          <FundModule fundType="mix" isActivated={isFundActivated("mix")} />
+        );
       case "commission":
         return (
           <MyCommission
@@ -299,10 +347,18 @@ export function Dashboard({ onLogout }: DashboardProps) {
           <ActivationPanel
             isActivated={isActivated}
             onActivated={refreshActivation}
+            activatedFunds={activatedFunds}
           />
         );
       default:
-        return <HomeView isActivated={isActivated} onNavigate={navigate} />;
+        return (
+          <HomeView
+            isActivated={isActivated}
+            activatedFunds={activatedFunds}
+            isAdmin={session?.isAdmin ?? false}
+            onNavigate={navigate}
+          />
+        );
     }
   };
 
@@ -529,21 +585,37 @@ export function Dashboard({ onLogout }: DashboardProps) {
 // Home view with cards grid
 function HomeView({
   isActivated,
+  activatedFunds,
+  isAdmin,
   onNavigate,
 }: {
   isActivated: boolean;
+  activatedFunds?: User["activatedFunds"];
+  isAdmin: boolean;
   onNavigate: (mod: Module) => void;
 }) {
-  const LOCKED_IDS: Module[] = [
-    "gaming",
-    "stock",
-    "political",
-    "mix",
+  // For fund cards, check per-fund activation; for other locked items, check global activation
+  const GENERAL_LOCKED_IDS: Module[] = [
     "commission",
     "activity",
     "withdrawal",
     "history",
   ];
+  const FUND_IDS: Module[] = ["gaming", "stock", "political", "mix"];
+
+  const isFundLocked = (id: Module): boolean => {
+    if (isAdmin) return false;
+    if (FUND_IDS.includes(id)) {
+      const fundKey = id as "gaming" | "stock" | "political" | "mix";
+      // Backward compat: if activated but no activatedFunds, unlock all funds
+      if (isActivated && !activatedFunds) return false;
+      return !(activatedFunds?.[fundKey] ?? false);
+    }
+    if (GENERAL_LOCKED_IDS.includes(id)) {
+      return !isActivated;
+    }
+    return false;
+  };
 
   return (
     <div className="space-y-6 pb-16 lg:pb-0 animate-fade-in-up">
@@ -585,7 +657,7 @@ function HomeView({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
         {MODULE_CARDS.map((card) => {
-          const locked = LOCKED_IDS.includes(card.id) && !isActivated;
+          const locked = isFundLocked(card.id);
           return (
             <button
               type="button"

@@ -457,17 +457,16 @@ function downloadReceipt(w: Withdrawal) {
 </body>
 </html>`;
 
-  const blob = new Blob([html], { type: "text/html" });
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
-  const win = window.open(url, "_blank");
-  if (win) {
-    win.onload = () => {
-      setTimeout(() => {
-        win.print();
-        URL.revokeObjectURL(url);
-      }, 500);
-    };
-  }
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `KuberPanel-Receipt-${w.transactionId}.html`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast.success("Receipt downloaded! Open the file to view/print.");
 }
 
 export function WithdrawalHistory({ isActivated }: WithdrawalHistoryProps) {

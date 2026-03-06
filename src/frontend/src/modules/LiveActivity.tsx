@@ -237,9 +237,9 @@ export function LiveActivity({
               </>
             ) : (
               <>
-                <span className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="text-sm text-muted-foreground font-medium">
-                  Inactive
+                <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse" />
+                <span className="text-sm text-yellow-400 font-medium">
+                  Ready
                 </span>
               </>
             )}
@@ -479,17 +479,17 @@ export function LiveActivity({
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Offline
+                <span className="w-1.5 h-1.5 rounded-full bg-yellow-400/70 animate-pulse" />
+                <span className="text-xs font-semibold text-yellow-400 uppercase tracking-wide">
+                  Ready
                 </span>
               </div>
             </div>
             <div className="text-center py-16 text-muted-foreground">
               <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm font-medium">No Active Account</p>
+              <p className="text-sm font-medium">Waiting for Active Fund</p>
               <p className="text-xs text-muted-foreground/60 mt-1">
-                Turn ON a fund to see live transactions
+                Turn ON a fund from any Fund module to start live transactions
               </p>
             </div>
           </div>

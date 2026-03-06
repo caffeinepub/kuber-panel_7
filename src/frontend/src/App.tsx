@@ -48,16 +48,14 @@ export default function App() {
   const [page, setPage] = useState<AppPage>("login");
   const [showWelcome, setShowWelcome] = useState(false);
   const [welcomeName, setWelcomeName] = useState("");
-  const [syncing, setSyncing] = useState(true);
-
   // Check existing session + init backend sync on mount
   useEffect(() => {
     const session = getSession();
     if (session) {
       setPage(session.isAdmin ? "admin" : "dashboard");
     }
-    // Pull all data from backend canister into localStorage
-    initBackendSync().finally(() => setSyncing(false));
+    // Pull all data from backend canister into localStorage (silent)
+    initBackendSync().catch(() => {});
   }, []);
 
   // Global live transaction simulator
@@ -138,27 +136,6 @@ export default function App() {
           },
         }}
       />
-
-      {/* Brief syncing overlay shown only during initial backend load */}
-      {syncing && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          style={{ background: "rgba(10,10,15,0.92)" }}
-        >
-          <div className="flex flex-col items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-full border-2 border-t-transparent animate-spin"
-              style={{ borderColor: "#d4a017", borderTopColor: "transparent" }}
-            />
-            <p
-              className="text-sm font-medium tracking-widest uppercase"
-              style={{ color: "#d4a017" }}
-            >
-              Syncing…
-            </p>
-          </div>
-        </div>
-      )}
 
       {showWelcome && (
         <WelcomePopup
