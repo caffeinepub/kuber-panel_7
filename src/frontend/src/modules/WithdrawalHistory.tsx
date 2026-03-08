@@ -20,7 +20,14 @@ import {
   getSession,
   getWithdrawals,
 } from "@/lib/storage";
-import { CheckCircle2, Copy, Download, History, Lock } from "lucide-react";
+import {
+  CheckCircle2,
+  Copy,
+  Download,
+  History,
+  Lock,
+  Printer,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -239,7 +246,6 @@ function WithdrawalDetailContent({ w }: { w: Withdrawal }) {
   }
 
   if (w.method === "usdt") {
-    const approxInr = Math.round(w.amount * 83.5);
     return (
       <div className="space-y-2.5 text-sm">
         <div className="flex items-center gap-2 p-2.5 rounded-lg bg-purple-500/10 border border-purple-500/30 mb-1">
@@ -289,10 +295,7 @@ function WithdrawalDetailContent({ w }: { w: Withdrawal }) {
         <div className="flex justify-between items-start gap-4">
           <span className="text-muted-foreground shrink-0">Amount</span>
           <span className="text-primary font-bold text-right">
-            {w.amount} USDT
-            <span className="text-muted-foreground font-normal text-xs ml-1">
-              (≈ ₹{approxInr.toLocaleString("en-IN")})
-            </span>
+            ₮ {w.amount} USDT
           </span>
         </div>
         {w.networkFee !== undefined && (
@@ -372,11 +375,9 @@ function WithdrawalDetailContent({ w }: { w: Withdrawal }) {
   );
 }
 
-function downloadReceipt(w: Withdrawal) {
+function generateReceiptHtml(w: Withdrawal): string {
   const transferMode =
     w.transferMode ?? (w.transactionId?.startsWith("NEFT") ? "NEFT" : "IMPS");
-
-  const maskAccount = (num: string) => num ?? "—";
 
   const methodRows = () => {
     if (w.method === "upi") {
@@ -393,7 +394,7 @@ function downloadReceipt(w: Withdrawal) {
         ${w.referenceNumber ? `<tr><td>RRN (Reference)</td><td>${w.referenceNumber}</td></tr>` : ""}
         ${w.utrNumber ? `<tr><td>UTR Number</td><td>${w.utrNumber}</td></tr>` : ""}
         ${w.bankName ? `<tr><td>Bank Name</td><td>${w.bankName}</td></tr>` : ""}
-        ${w.accountNumber ? `<tr><td>Account Number</td><td>${maskAccount(w.accountNumber)}</td></tr>` : ""}
+        ${w.accountNumber ? `<tr><td>Account Number</td><td>${w.accountNumber}</td></tr>` : ""}
         ${w.holderName ? `<tr><td>Account Holder</td><td>${w.holderName}</td></tr>` : ""}
         ${w.ifscCode ? `<tr><td>IFSC Code</td><td>${w.ifscCode}</td></tr>` : ""}
         ${w.bankBranch ? `<tr><td>Branch</td><td>${w.bankBranch}</td></tr>` : ""}
@@ -412,7 +413,7 @@ function downloadReceipt(w: Withdrawal) {
     return "";
   };
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8"/>
@@ -433,7 +434,7 @@ function downloadReceipt(w: Withdrawal) {
     .amount-row td:last-child { font-size: 18px; font-weight: 800; color: #c8940a; }
     .footer { margin-top: 24px; border-top: 1px solid #eee; padding-top: 16px; text-align: center; font-size: 11px; color: #999; }
     .badge { display: inline-block; background: #c8940a; color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-top: 4px; }
-    @media print { body { padding: 20px; } }
+    @media print { body { padding: 20px; } .no-print { display: none; } }
   </style>
 </head>
 <body>
@@ -456,7 +457,10 @@ function downloadReceipt(w: Withdrawal) {
   </div>
 </body>
 </html>`;
+}
 
+function downloadReceipt(w: Withdrawal) {
+  const html = generateReceiptHtml(w);
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -467,6 +471,23 @@ function downloadReceipt(w: Withdrawal) {
   document.body.removeChild(link);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast.success("Receipt downloaded! Open the file to view/print.");
+}
+
+function printReceipt(w: Withdrawal) {
+  const html = generateReceiptHtml(w);
+  const printWindow = window.open("", "_blank", "width=700,height=900");
+  if (printWindow) {
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 300);
+  } else {
+    // Fallback: download if popup blocked
+    downloadReceipt(w);
+    toast.error("Popup blocked. Receipt downloaded instead — open to print.");
+  }
 }
 
 export function WithdrawalHistory({ isActivated }: WithdrawalHistoryProps) {
@@ -585,7 +606,9 @@ export function WithdrawalHistory({ isActivated }: WithdrawalHistoryProps) {
                         {w.accountNumber ?? "—"}
                       </TableCell>
                       <TableCell className="font-semibold text-primary tabular-nums">
-                        {formatCurrency(w.amount)}
+                        {w.method === "usdt"
+                          ? `₮ ${w.amount} USDT`
+                          : formatCurrency(w.amount)}
                       </TableCell>
                       <TableCell className="text-muted-foreground text-sm">
                         {w.date}
@@ -624,14 +647,23 @@ export function WithdrawalHistory({ isActivated }: WithdrawalHistoryProps) {
           {selected && (
             <>
               <WithdrawalDetailContent w={selected} />
-              <div className="pt-3 border-t border-border">
+              <div className="pt-3 border-t border-border flex gap-2">
+                <Button
+                  onClick={() => printReceipt(selected)}
+                  variant="outline"
+                  className="flex-1 border-primary/40 text-primary hover:bg-primary/10 gap-2"
+                  data-ocid="withdrawal_history.print_button"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print Receipt
+                </Button>
                 <Button
                   onClick={() => downloadReceipt(selected)}
-                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
+                  className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
                   data-ocid="withdrawal_history.download_button"
                 >
                   <Download className="w-4 h-4" />
-                  Download Receipt
+                  Download
                 </Button>
               </div>
             </>

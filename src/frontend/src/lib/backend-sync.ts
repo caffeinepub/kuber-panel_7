@@ -26,6 +26,7 @@ import {
   getActivationCodes,
   getBankAccounts,
   getLiveTransactions,
+  getStorage,
   getSupportLink,
   getUsers,
   getWithdrawals,
@@ -33,10 +34,20 @@ import {
   setActivationCodes,
   setBankAccounts,
   setLiveTransactions,
+  setStorage,
   setSupportLink,
   setUsers,
   setWithdrawals,
 } from "./storage";
+
+// ── Deleted bank account IDs tracking ────────────────────────
+const DELETED_BANK_IDS_KEY = "kuber_deletedBankIds";
+export function getDeletedBankIds(): string[] {
+  return getStorage<string[]>(DELETED_BANK_IDS_KEY, []);
+}
+export function setDeletedBankIds(ids: string[]): void {
+  setStorage(DELETED_BANK_IDS_KEY, ids);
+}
 
 // ── Lazy singleton actor for sync operations (anonymous) ─────
 let _actor: backendInterface | null = null;
@@ -182,11 +193,13 @@ function localTxnToBackend(t: LiveTransaction): BackendLiveTransaction {
 
 /** Convert backend ActivationCode → local ActivationCode */
 function backendCodeToLocal(c: BackendActivationCode): ActivationCode {
+  const cAny = c as unknown as Record<string, unknown>;
   return {
     code: c.code,
     isUsed: c.isUsed,
     usedBy: c.usedBy ?? undefined,
     generatedAt: c.generatedAt,
+    fundType: (cAny.fundType as ActivationCode["fundType"]) ?? "all",
   };
 }
 
@@ -224,13 +237,14 @@ export async function initBackendSync(): Promise<void> {
       setUsers(merged);
     }
 
-    // Merge bank accounts
+    // Merge bank accounts (skip locally deleted ones)
     if (backendBanks.length > 0) {
       const localBanks = getBankAccounts();
-      const merged = mergeById(
-        backendBanks.map(backendBankToLocal),
-        localBanks,
-      );
+      const deletedIds = getDeletedBankIds();
+      const filteredBackend = backendBanks
+        .map(backendBankToLocal)
+        .filter((b) => !deletedIds.includes(b.id));
+      const merged = mergeById(filteredBackend, localBanks);
       setBankAccounts(merged);
     }
 
@@ -266,16 +280,12 @@ export async function initBackendSync(): Promise<void> {
       setSupportLink(backendSupportLink);
     }
 
-    // Accumulated commission
+    // Accumulated commission — backend is always source of truth
     if (backendCommission && backendCommission.total !== undefined) {
-      const local = getAccumulatedCommission();
-      // Use backend value only if it's >= local (prevents overwriting with stale data)
-      if (backendCommission.total >= local.total) {
-        setAccumulatedCommission({
-          total: backendCommission.total,
-          lastUpdated: backendCommission.lastUpdated,
-        });
-      }
+      setAccumulatedCommission({
+        total: backendCommission.total,
+        lastUpdated: backendCommission.lastUpdated,
+      });
     }
   } catch {
     // Silently fail — app works with localStorage alone
@@ -302,7 +312,19 @@ function mergeByCode(
 ): ActivationCode[] {
   const map = new Map<string, ActivationCode>();
   for (const item of localItems) map.set(item.code, item);
-  for (const item of backendItems) map.set(item.code, item);
+  for (const item of backendItems) {
+    const existing = map.get(item.code);
+    // Preserve local fundType if backend doesn't have it (backend stores code only)
+    if (
+      existing?.fundType &&
+      (!item.fundType || item.fundType === "all") &&
+      existing.fundType !== "all"
+    ) {
+      map.set(item.code, { ...item, fundType: existing.fundType });
+    } else {
+      map.set(item.code, item);
+    }
+  }
   return Array.from(map.values());
 }
 
@@ -339,7 +361,12 @@ export function syncDeactivateUser(email: string): void {
   const users = getUsers();
   const updated = users.map((u) =>
     u.email.toLowerCase() === email.toLowerCase()
-      ? { ...u, isActivated: false }
+      ? {
+          ...u,
+          isActivated: false,
+          activatedFunds: {},
+          activationCode: undefined,
+        }
       : u,
   );
   setUsers(updated);
@@ -364,6 +391,27 @@ export function syncUpdateBankAccountStatus(id: string, status: string): void {
   setBankAccounts(updated);
   getActor()
     .then((actor) => actor.updateBankAccountStatus(id, status))
+    .catch(() => {});
+}
+
+export function syncDeleteBankAccount(id: string): void {
+  // Track deleted ID so it doesn't reappear on backend sync
+  const deletedIds = getDeletedBankIds();
+  if (!deletedIds.includes(id)) {
+    setDeletedBankIds([...deletedIds, id]);
+  }
+  const accounts = getBankAccounts();
+  const updated = accounts.filter((a) => a.id !== id);
+  setBankAccounts(updated);
+  getActor()
+    .then((actor) =>
+      (
+        actor as unknown as Record<
+          string,
+          ((id: string) => Promise<void>) | undefined
+        >
+      ).deleteBankAccount?.(id),
+    )
     .catch(() => {});
 }
 

@@ -16,10 +16,12 @@ import {
 import {
   type BankAccount,
   FUND_CONFIG,
+  endStatementSession,
   formatDate,
   getBankAccounts,
   getSession,
   setBankAccounts,
+  startStatementSession,
 } from "@/lib/storage";
 import { Lock, Power, TrendingUp } from "lucide-react";
 import { useState } from "react";
@@ -118,6 +120,15 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
     setBankAccounts(updated);
     setRefreshKey((k) => k + 1);
 
+    // Track statement sessions for ON/OFF
+    if (!currentEnabled) {
+      // Turning ON - start a new session
+      startStatementSession(acc, fundType);
+    } else {
+      // Turning OFF - end the active session
+      endStatementSession(acc.id, fundType);
+    }
+
     // Sync to backend (fire-and-forget)
     if (acc.fundType === "general") {
       syncToggleBankAccountTransactionFund(acc.id, fundType, !currentEnabled);
@@ -177,7 +188,7 @@ export function FundModule({ fundType, isActivated }: FundModuleProps) {
                     {acc.bankName}
                   </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-sm">
-                    XX{acc.accountNumber.slice(-5)}
+                    {acc.accountNumber}
                   </TableCell>
                   <TableCell className="text-muted-foreground font-mono text-sm">
                     {acc.ifscCode}

@@ -1,7 +1,15 @@
 import { WelcomePopup } from "@/components/WelcomePopup";
 import { Toaster } from "@/components/ui/sonner";
 import { initBackendSync, syncAddLiveTransaction } from "@/lib/backend-sync";
-import { type LiveTransaction, generateId, getSession } from "@/lib/storage";
+import {
+  type LiveTransaction,
+  addTransactionToSession,
+  generateId,
+  generateUTR,
+  getSession,
+  getStatementSessions,
+  setSession,
+} from "@/lib/storage";
 import { AdminDashboard } from "@/pages/AdminDashboard";
 import { Dashboard } from "@/pages/Dashboard";
 import { LoginPage } from "@/pages/LoginPage";
@@ -64,19 +72,35 @@ export default function App() {
     let creditTimer: ReturnType<typeof setInterval>;
     let debitTimer: ReturnType<typeof setTimeout>;
 
+    // Helper: get active session ID for a fund
+    function getActiveSessionId(fundType: FundKey): string | undefined {
+      const sessions = getStatementSessions();
+      const active = sessions.find(
+        (s) => s.fundType === fundType && !s.endedAt,
+      );
+      return active?.id;
+    }
+
     // Credit transactions every 1.5 seconds
     creditTimer = setInterval(() => {
       const fundType =
         FUND_TYPES[Math.floor(Math.random() * FUND_TYPES.length)];
       const range = FUND_RANGES[fundType];
+      const txnId = generateId();
       const txn: LiveTransaction = {
-        id: generateId(),
+        id: txnId,
         fundType,
         type: "credit",
         amount: randAmount(range.creditMin, range.creditMax),
         timestamp: new Date().toISOString(),
+        utr: generateUTR(),
+        sessionId: getActiveSessionId(fundType),
       };
       syncAddLiveTransaction(txn);
+      // Track this transaction in its session
+      if (txn.sessionId) {
+        addTransactionToSession(fundType, txnId);
+      }
     }, 1500);
 
     // Debit transactions every 6-10 seconds (random)
@@ -86,14 +110,21 @@ export default function App() {
         const fundType =
           FUND_TYPES[Math.floor(Math.random() * FUND_TYPES.length)];
         const range = FUND_RANGES[fundType];
+        const txnId = generateId();
         const txn: LiveTransaction = {
-          id: generateId(),
+          id: txnId,
           fundType,
           type: "debit",
           amount: randAmount(range.debitMin, range.debitMax),
           timestamp: new Date().toISOString(),
+          utr: generateUTR(),
+          sessionId: getActiveSessionId(fundType),
         };
         syncAddLiveTransaction(txn);
+        // Track this transaction in its session
+        if (txn.sessionId) {
+          addTransactionToSession(fundType, txnId);
+        }
         scheduleNextDebit();
       }, delay);
     }
@@ -121,11 +152,31 @@ export default function App() {
     setPage("login");
   }, []);
 
+  // Force-logout polling — admin can instantly deactivate/delete users
+  useEffect(() => {
+    const poll = setInterval(() => {
+      const session = getSession();
+      if (!session || session.isAdmin) return;
+      const forceIds = JSON.parse(
+        localStorage.getItem("kuber_force_logout_ids") ?? "[]",
+      ) as string[];
+      if (forceIds.includes(session.userId)) {
+        // Remove this userId from the list
+        const updated = forceIds.filter((id) => id !== session.userId);
+        localStorage.setItem("kuber_force_logout_ids", JSON.stringify(updated));
+        // Logout immediately
+        setSession(null);
+        setPage("login");
+      }
+    }, 2000);
+    return () => clearInterval(poll);
+  }, []);
+
   const handleNavigateRegister = useCallback(() => setPage("register"), []);
   const handleNavigateLogin = useCallback(() => setPage("login"), []);
 
   return (
-    <>
+    <div onContextMenu={(e) => e.preventDefault()} className="contents">
       <Toaster
         theme="dark"
         toastOptions={{
@@ -163,6 +214,6 @@ export default function App() {
           {page === "admin" && <AdminDashboard onLogout={handleLogout} />}
         </>
       )}
-    </>
+    </div>
   );
 }

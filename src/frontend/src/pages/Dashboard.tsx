@@ -7,6 +7,7 @@ import {
   getUsers,
   setSession,
 } from "@/lib/storage";
+import { AccountStatement } from "@/modules/AccountStatement";
 import { ActivationPanel } from "@/modules/ActivationPanel";
 import { AddBankAccount } from "@/modules/AddBankAccount";
 import { FundModule } from "@/modules/FundModule";
@@ -22,6 +23,7 @@ import {
   Building2,
   ChevronLeft,
   ChevronRight,
+  FileText,
   Gamepad2,
   History,
   Landmark,
@@ -48,7 +50,8 @@ type Module =
   | "withdrawal"
   | "history"
   | "support"
-  | "activation";
+  | "activation"
+  | "account-statement";
 
 interface DashboardProps {
   onLogout: () => void;
@@ -121,6 +124,12 @@ const NAV_ITEMS = [
     icon: Shield,
     requiresActivation: false,
   },
+  {
+    id: "account-statement" as Module,
+    label: "Account Statement",
+    icon: FileText,
+    requiresActivation: true,
+  },
 ];
 
 const MODULE_CARDS = [
@@ -129,110 +138,120 @@ const MODULE_CARDS = [
     label: "Add Bank Account",
     icon: Building2,
     desc: "Link your bank",
-    color: "from-[#1a3a5c] to-[#0f2035]",
-    border: "border-[#2a6496]/50",
-    iconBg: "bg-[#1e6bb8]/30",
-    iconColor: "text-[#4fa8e8]",
+    color: "from-[#0f2744] to-[#071525]",
+    border: "border-[#1d6fa4]/60",
+    iconBg: "bg-[#1565c0]/25",
+    iconColor: "text-[#64b5f6]",
   },
   {
     id: "gaming" as Module,
     label: "Gaming Fund",
     icon: Gamepad2,
     desc: "15% commission",
-    color: "from-[#3a1a5c] to-[#1f0f35]",
-    border: "border-[#7c3aed]/50",
-    iconBg: "bg-[#7c3aed]/30",
-    iconColor: "text-[#a78bfa]",
+    color: "from-[#2d1b4e] to-[#1a0f2e]",
+    border: "border-[#7b1fa2]/60",
+    iconBg: "bg-[#7b1fa2]/25",
+    iconColor: "text-[#ce93d8]",
   },
   {
     id: "stock" as Module,
     label: "Stock Fund",
     icon: TrendingUp,
     desc: "30% commission",
-    color: "from-[#0f3a2a] to-[#071a12]",
-    border: "border-[#059669]/50",
-    iconBg: "bg-[#059669]/30",
-    iconColor: "text-[#34d399]",
+    color: "from-[#0a2e1a] to-[#051810]",
+    border: "border-[#2e7d32]/60",
+    iconBg: "bg-[#2e7d32]/25",
+    iconColor: "text-[#81c784]",
   },
   {
     id: "political" as Module,
     label: "Political Fund",
     icon: Landmark,
     desc: "30% commission",
-    color: "from-[#3a1010] to-[#1f0707]",
-    border: "border-[#dc2626]/50",
-    iconBg: "bg-[#dc2626]/30",
-    iconColor: "text-[#f87171]",
+    color: "from-[#2e0f0f] to-[#1a0707]",
+    border: "border-[#c62828]/60",
+    iconBg: "bg-[#c62828]/25",
+    iconColor: "text-[#ef9a9a]",
   },
   {
     id: "mix" as Module,
     label: "Mix Fund",
     icon: Shuffle,
     desc: "25% commission",
-    color: "from-[#1a3a1a] to-[#0f200f]",
-    border: "border-[#16a34a]/50",
-    iconBg: "bg-[#16a34a]/30",
-    iconColor: "text-[#4ade80]",
+    color: "from-[#0f2e1a] to-[#071a0f]",
+    border: "border-[#1b5e20]/60",
+    iconBg: "bg-[#1b5e20]/25",
+    iconColor: "text-[#a5d6a7]",
   },
   {
     id: "commission" as Module,
     label: "My Commission",
     icon: BarChart3,
     desc: "Track your earnings",
-    color: "from-[#3a2e0a] to-[#1f1905]",
-    border: "border-[#d97706]/50",
-    iconBg: "bg-[#d97706]/30",
-    iconColor: "text-[#fbbf24]",
+    color: "from-[#2e2000] to-[#1a1200]",
+    border: "border-[#f57f17]/60",
+    iconBg: "bg-[#f57f17]/25",
+    iconColor: "text-[#ffcc02]",
   },
   {
     id: "activity" as Module,
     label: "Live Fund Activity",
     icon: Activity,
     desc: "Real-time transactions",
-    color: "from-[#0a3a2a] to-[#051f15]",
-    border: "border-[#10b981]/50",
-    iconBg: "bg-[#10b981]/30",
-    iconColor: "text-[#34d399]",
+    color: "from-[#002e22] to-[#001810]",
+    border: "border-[#00695c]/60",
+    iconBg: "bg-[#00695c]/25",
+    iconColor: "text-[#80cbc4]",
   },
   {
     id: "withdrawal" as Module,
     label: "Withdrawal",
     icon: ArrowDownToLine,
     desc: "View withdrawal info",
-    color: "from-[#3a1a0a] to-[#1f0d05]",
-    border: "border-[#ea580c]/50",
-    iconBg: "bg-[#ea580c]/30",
-    iconColor: "text-[#fb923c]",
+    color: "from-[#2e1200] to-[#1a0900]",
+    border: "border-[#e65100]/60",
+    iconBg: "bg-[#e65100]/25",
+    iconColor: "text-[#ffab91]",
   },
   {
     id: "history" as Module,
     label: "Withdrawal History",
     icon: History,
     desc: "30 day history",
-    color: "from-[#1a1a2e] to-[#0d0d1a]",
-    border: "border-[#6366f1]/50",
-    iconBg: "bg-[#6366f1]/30",
-    iconColor: "text-[#a5b4fc]",
+    color: "from-[#0f0f2e] to-[#07071a]",
+    border: "border-[#283593]/60",
+    iconBg: "bg-[#283593]/25",
+    iconColor: "text-[#9fa8da]",
   },
   {
     id: "support" as Module,
     label: "Help Support",
     icon: MessageCircle,
     desc: "Get instant help",
-    color: "from-[#0a2a3a] to-[#05151f]",
-    border: "border-[#0ea5e9]/50",
-    iconBg: "bg-[#0ea5e9]/30",
-    iconColor: "text-[#38bdf8]",
+    color: "from-[#002244] to-[#001228]",
+    border: "border-[#0277bd]/60",
+    iconBg: "bg-[#0277bd]/25",
+    iconColor: "text-[#81d4fa]",
   },
   {
     id: "activation" as Module,
     label: "Activation Panel",
     icon: Shield,
     desc: "Unlock all features",
-    color: "from-[#3a2a0a] to-[#1f1505]",
-    border: "border-[#f59e0b]/50",
-    iconBg: "bg-[#f59e0b]/30",
-    iconColor: "text-[#fcd34d]",
+    color: "from-[#2e2200] to-[#1a1400]",
+    border: "border-[#ff8f00]/60",
+    iconBg: "bg-[#ff8f00]/25",
+    iconColor: "text-[#ffe082]",
+  },
+  {
+    id: "account-statement" as Module,
+    label: "Account Statement",
+    icon: FileText,
+    desc: "30-day bank statement",
+    color: "from-[#0a1e33] to-[#05101e]",
+    border: "border-[#0277bd]/60",
+    iconBg: "bg-[#0277bd]/25",
+    iconColor: "text-[#4fc3f7]",
   },
 ];
 
@@ -260,18 +279,11 @@ export function Dashboard({ onLogout }: DashboardProps) {
     const user = users.find((u) => u.id === session.userId);
     const activated = user?.isActivated ?? false;
     setIsActivated(activated);
-    // Backward compat: if activated but no activatedFunds set, assume all funds active
+    // Strict: only use actual activatedFunds from user record
     if (activated && user?.activatedFunds) {
       setActivatedFunds(user.activatedFunds);
-    } else if (activated && !user?.activatedFunds) {
-      setActivatedFunds({
-        gaming: true,
-        stock: true,
-        political: true,
-        mix: true,
-      });
     } else {
-      setActivatedFunds(undefined);
+      setActivatedFunds(activated ? {} : undefined);
     }
   }, [session]);
 
@@ -348,6 +360,13 @@ export function Dashboard({ onLogout }: DashboardProps) {
             isActivated={isActivated}
             onActivated={refreshActivation}
             activatedFunds={activatedFunds}
+          />
+        );
+      case "account-statement":
+        return (
+          <AccountStatement
+            isActivated={isActivated}
+            isAdmin={session?.isAdmin ?? false}
           />
         );
       default:
@@ -600,6 +619,7 @@ function HomeView({
     "activity",
     "withdrawal",
     "history",
+    "account-statement",
   ];
   const FUND_IDS: Module[] = ["gaming", "stock", "political", "mix"];
 
@@ -607,8 +627,8 @@ function HomeView({
     if (isAdmin) return false;
     if (FUND_IDS.includes(id)) {
       const fundKey = id as "gaming" | "stock" | "political" | "mix";
-      // Backward compat: if activated but no activatedFunds, unlock all funds
-      if (isActivated && !activatedFunds) return false;
+      // Strict: only unlock if that specific fund is in activatedFunds
+      if (!isActivated) return true;
       return !(activatedFunds?.[fundKey] ?? false);
     }
     if (GENERAL_LOCKED_IDS.includes(id)) {

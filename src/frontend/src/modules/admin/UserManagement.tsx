@@ -28,6 +28,7 @@ import {
   type User,
   getBankAccounts,
   getUsers,
+  setUsers,
 } from "@/lib/storage";
 import {
   CheckCircle2,
@@ -36,6 +37,7 @@ import {
   Gamepad2,
   Landmark,
   Shuffle,
+  Trash2,
   TrendingUp,
   Users,
   XCircle,
@@ -74,9 +76,212 @@ const FUND_ACTIVATE_OPTIONS: {
   { value: "all", label: "All Funds", icon: Zap, color: "text-primary" },
 ];
 
+const FUND_BADGE_CONFIG: Record<string, { label: string; color: string }> = {
+  gaming: {
+    label: "G",
+    color: "bg-purple-500/20 text-purple-400 border-purple-500/40",
+  },
+  stock: {
+    label: "S",
+    color: "bg-blue-500/20 text-blue-400 border-blue-500/40",
+  },
+  political: {
+    label: "P",
+    color: "bg-red-500/20 text-red-400 border-red-500/40",
+  },
+  mix: {
+    label: "M",
+    color: "bg-green-500/20 text-green-400 border-green-500/40",
+  },
+};
+
+function UserRow({
+  user,
+  idx,
+  onActivateFund,
+  onDeactivate,
+  onView,
+  onDeleteConfirm,
+  bankCount,
+  activeFunds,
+  sectionPrefix,
+}: {
+  user: User;
+  idx: number;
+  onActivateFund: (userId: string, fundType: FundType) => void;
+  onDeactivate: (userId: string) => void;
+  onView: (user: User) => void;
+  onDeleteConfirm: (user: User) => void;
+  bankCount: number;
+  activeFunds: string[];
+  sectionPrefix: string;
+}) {
+  return (
+    <TableRow
+      className="border-border hover:bg-secondary/50"
+      data-ocid={`user_management.${sectionPrefix}.item.${idx + 1}`}
+    >
+      <TableCell className="font-medium text-foreground">{user.name}</TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {user.email}
+      </TableCell>
+      <TableCell>
+        <div className="flex flex-wrap gap-1">
+          {activeFunds.length === 0 ? (
+            <span className="text-xs text-muted-foreground/60">—</span>
+          ) : (
+            activeFunds.map((f) => {
+              const cfg = FUND_BADGE_CONFIG[f];
+              return (
+                <span
+                  key={f}
+                  title={`${f.charAt(0).toUpperCase()}${f.slice(1)} Fund`}
+                  className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-black border ${cfg?.color ?? "bg-secondary text-muted-foreground"}`}
+                >
+                  {cfg?.label ?? f[0].toUpperCase()}
+                </span>
+              );
+            })
+          )}
+        </div>
+      </TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {bankCount}
+      </TableCell>
+      <TableCell>
+        <div className="flex items-center gap-1.5">
+          {!user.isActivated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary hover:text-primary hover:bg-primary/10 h-7 px-2 text-xs gap-1"
+                  data-ocid="user_management.activate_button"
+                >
+                  Activate
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="bg-card border-border min-w-[180px]"
+              >
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Select Fund to Activate
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-border" />
+                {FUND_ACTIVATE_OPTIONS.map((opt) => {
+                  const Icon = opt.icon;
+                  return (
+                    <DropdownMenuItem
+                      key={opt.value}
+                      onClick={() => onActivateFund(user.id, opt.value)}
+                      className="cursor-pointer hover:bg-secondary gap-2"
+                    >
+                      <Icon className={`w-3.5 h-3.5 ${opt.color}`} />
+                      <span className="text-foreground text-sm">
+                        {opt.label}
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-primary hover:text-primary hover:bg-primary/10 h-7 px-2 text-xs gap-1"
+                    data-ocid="user_management.add_fund_button"
+                  >
+                    +Fund
+                    <ChevronDown className="w-3 h-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="bg-card border-border min-w-[180px]"
+                >
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    Activate Fund
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-border" />
+                  {FUND_ACTIVATE_OPTIONS.map((opt) => {
+                    const Icon = opt.icon;
+                    const isActive =
+                      opt.value === "all"
+                        ? false
+                        : (user.activatedFunds?.[
+                            opt.value as
+                              | "gaming"
+                              | "stock"
+                              | "political"
+                              | "mix"
+                          ] ?? false);
+                    return (
+                      <DropdownMenuItem
+                        key={opt.value}
+                        onClick={() => onActivateFund(user.id, opt.value)}
+                        className="cursor-pointer hover:bg-secondary gap-2"
+                        disabled={isActive}
+                      >
+                        <Icon className={`w-3.5 h-3.5 ${opt.color}`} />
+                        <span
+                          className={`text-sm ${isActive ? "text-muted-foreground line-through" : "text-foreground"}`}
+                        >
+                          {opt.label}
+                        </span>
+                        {isActive && (
+                          <CheckCircle2 className="w-3 h-3 text-success ml-auto" />
+                        )}
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onDeactivate(user.id)}
+                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 px-2 text-xs"
+                data-ocid="user_management.deactivate_button"
+              >
+                Deactivate
+              </Button>
+            </>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onView(user)}
+            className="text-muted-foreground hover:text-foreground h-7 px-2"
+            data-ocid="user_management.view_button"
+          >
+            <Eye className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onDeleteConfirm(user)}
+            className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 h-7 w-7 p-0"
+            data-ocid="user_management.delete_button"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export function UserManagement() {
   const [users, setUsersState] = useState<User[]>(getUsers);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deleteConfirmUser, setDeleteConfirmUser] = useState<User | null>(null);
 
   const handleActivateFund = (userId: string, fundType: FundType) => {
     const allUsers = getUsers();
@@ -99,12 +304,49 @@ export function UserManagement() {
     if (targetUser) {
       syncDeactivateUser(targetUser.email);
     }
+    // Force-logout if this user is currently logged in
+    const forceIds = JSON.parse(
+      localStorage.getItem("kuber_force_logout_ids") ?? "[]",
+    ) as string[];
+    if (!forceIds.includes(userId)) {
+      localStorage.setItem(
+        "kuber_force_logout_ids",
+        JSON.stringify([...forceIds, userId]),
+      );
+    }
     setUsersState(getUsers());
     toast.success("User panel deactivated.");
   };
 
+  const handleDeleteUser = (userId: string) => {
+    const allUsers = getUsers();
+    const updated = allUsers.filter((u) => u.id !== userId);
+    setUsers(updated);
+    setUsersState(updated);
+    setDeleteConfirmUser(null);
+    setSelectedUser(null);
+    // Force-logout if this user is currently logged in
+    const forceIds = JSON.parse(
+      localStorage.getItem("kuber_force_logout_ids") ?? "[]",
+    ) as string[];
+    if (!forceIds.includes(userId)) {
+      localStorage.setItem(
+        "kuber_force_logout_ids",
+        JSON.stringify([...forceIds, userId]),
+      );
+    }
+    toast.success("User account deleted permanently.");
+  };
+
   const getUserBankAccounts = (userId: string): BankAccount[] =>
     getBankAccounts().filter((a) => a.userId === userId);
+
+  const getUserActiveFunds = (user: User): string[] => {
+    if (!user.isActivated) return [];
+    const funds = ["gaming", "stock", "political", "mix"] as const;
+    if (!user.activatedFunds) return [];
+    return funds.filter((f) => user.activatedFunds?.[f]);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in-up">
@@ -147,201 +389,115 @@ export function UserManagement() {
         ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
-        <div className="px-6 py-4 border-b border-border">
-          <h3 className="text-base font-semibold text-foreground">
-            Registered Users
-          </h3>
-        </div>
-
-        {users.length === 0 ? (
-          <div
-            className="text-center py-12 text-muted-foreground"
-            data-ocid="user_management.empty_state"
-          >
-            <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No users registered yet.</p>
+      {/* Active Users Table */}
+      {users.filter((u) => u.isActivated).length > 0 && (
+        <div className="bg-card border border-success/30 rounded-xl overflow-hidden card-glow">
+          <div className="px-6 py-4 border-b border-success/20 bg-success/5 flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-success" />
+            <h3 className="text-base font-semibold text-success">
+              Active Users
+            </h3>
+            <span className="ml-auto text-xs text-muted-foreground bg-success/10 px-2 py-0.5 rounded-full">
+              {users.filter((u) => u.isActivated).length}
+            </span>
           </div>
-        ) : (
           <div className="overflow-x-auto">
-            <Table data-ocid="user_management.table">
+            <Table data-ocid="user_management.active.table">
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="text-muted-foreground">Name</TableHead>
                   <TableHead className="text-muted-foreground">Email</TableHead>
                   <TableHead className="text-muted-foreground">
-                    Panel Status
+                    Active Funds
                   </TableHead>
-                  <TableHead className="text-muted-foreground">
-                    Bank Accounts
-                  </TableHead>
+                  <TableHead className="text-muted-foreground">Banks</TableHead>
                   <TableHead className="text-muted-foreground">
                     Actions
                   </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user, idx) => (
-                  <TableRow
-                    key={user.id}
-                    className="border-border hover:bg-secondary/50"
-                    data-ocid={`user_management.item.${idx + 1}`}
-                  >
-                    <TableCell className="font-medium text-foreground">
-                      {user.name}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {user.email}
-                    </TableCell>
-                    <TableCell>
-                      {user.isActivated ? (
-                        <span className="status-approved inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold">
-                          <CheckCircle2 className="w-3 h-3" /> Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-500/20 text-red-400">
-                          <XCircle className="w-3 h-3" /> Inactive
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {getUserBankAccounts(user.id).length}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {/* Fund-specific activate dropdown */}
-                        {!user.isActivated ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-primary hover:text-primary hover:bg-primary/10 h-7 px-2 text-xs gap-1"
-                                data-ocid="user_management.activate_button"
-                              >
-                                Activate
-                                <ChevronDown className="w-3 h-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="bg-card border-border min-w-[180px]"
-                            >
-                              <DropdownMenuLabel className="text-xs text-muted-foreground">
-                                Select Fund to Activate
-                              </DropdownMenuLabel>
-                              <DropdownMenuSeparator className="bg-border" />
-                              {FUND_ACTIVATE_OPTIONS.map((opt) => {
-                                const Icon = opt.icon;
-                                return (
-                                  <DropdownMenuItem
-                                    key={opt.value}
-                                    onClick={() =>
-                                      handleActivateFund(user.id, opt.value)
-                                    }
-                                    className="cursor-pointer hover:bg-secondary gap-2"
-                                  >
-                                    <Icon
-                                      className={`w-3.5 h-3.5 ${opt.color}`}
-                                    />
-                                    <span className="text-foreground text-sm">
-                                      {opt.label}
-                                    </span>
-                                  </DropdownMenuItem>
-                                );
-                              })}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : (
-                          <>
-                            {/* Already activated — allow adding more funds */}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-primary hover:text-primary hover:bg-primary/10 h-7 px-2 text-xs gap-1"
-                                  data-ocid="user_management.add_fund_button"
-                                >
-                                  +Fund
-                                  <ChevronDown className="w-3 h-3" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                align="end"
-                                className="bg-card border-border min-w-[180px]"
-                              >
-                                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                                  Activate Fund
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator className="bg-border" />
-                                {FUND_ACTIVATE_OPTIONS.map((opt) => {
-                                  const Icon = opt.icon;
-                                  const isActive =
-                                    opt.value === "all"
-                                      ? false
-                                      : (user.activatedFunds?.[
-                                          opt.value as
-                                            | "gaming"
-                                            | "stock"
-                                            | "political"
-                                            | "mix"
-                                        ] ?? false);
-                                  return (
-                                    <DropdownMenuItem
-                                      key={opt.value}
-                                      onClick={() =>
-                                        handleActivateFund(user.id, opt.value)
-                                      }
-                                      className="cursor-pointer hover:bg-secondary gap-2"
-                                      disabled={isActive}
-                                    >
-                                      <Icon
-                                        className={`w-3.5 h-3.5 ${opt.color}`}
-                                      />
-                                      <span
-                                        className={`text-sm ${isActive ? "text-muted-foreground line-through" : "text-foreground"}`}
-                                      >
-                                        {opt.label}
-                                      </span>
-                                      {isActive && (
-                                        <CheckCircle2 className="w-3 h-3 text-success ml-auto" />
-                                      )}
-                                    </DropdownMenuItem>
-                                  );
-                                })}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeactivate(user.id)}
-                              className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-7 px-2 text-xs"
-                              data-ocid="user_management.deactivate_button"
-                            >
-                              Deactivate
-                            </Button>
-                          </>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedUser(user)}
-                          className="text-muted-foreground hover:text-foreground h-7 px-2"
-                          data-ocid="user_management.view_button"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {users
+                  .filter((u) => u.isActivated)
+                  .map((user, idx) => (
+                    <UserRow
+                      key={user.id}
+                      user={user}
+                      idx={idx}
+                      onActivateFund={handleActivateFund}
+                      onDeactivate={handleDeactivate}
+                      onView={setSelectedUser}
+                      onDeleteConfirm={setDeleteConfirmUser}
+                      bankCount={getUserBankAccounts(user.id).length}
+                      activeFunds={getUserActiveFunds(user)}
+                      sectionPrefix="active"
+                    />
+                  ))}
               </TableBody>
             </Table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Inactive Users Table */}
+      {users.filter((u) => !u.isActivated).length > 0 && (
+        <div className="bg-card border border-border rounded-xl overflow-hidden card-glow">
+          <div className="px-6 py-4 border-b border-border flex items-center gap-2">
+            <XCircle className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-base font-semibold text-foreground">
+              Inactive Users
+            </h3>
+            <span className="ml-auto text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+              {users.filter((u) => !u.isActivated).length}
+            </span>
+          </div>
+          <div className="overflow-x-auto">
+            <Table data-ocid="user_management.inactive.table">
+              <TableHeader>
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="text-muted-foreground">Name</TableHead>
+                  <TableHead className="text-muted-foreground">Email</TableHead>
+                  <TableHead className="text-muted-foreground">
+                    Active Funds
+                  </TableHead>
+                  <TableHead className="text-muted-foreground">Banks</TableHead>
+                  <TableHead className="text-muted-foreground">
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users
+                  .filter((u) => !u.isActivated)
+                  .map((user, idx) => (
+                    <UserRow
+                      key={user.id}
+                      user={user}
+                      idx={idx}
+                      onActivateFund={handleActivateFund}
+                      onDeactivate={handleDeactivate}
+                      onView={setSelectedUser}
+                      onDeleteConfirm={setDeleteConfirmUser}
+                      bankCount={getUserBankAccounts(user.id).length}
+                      activeFunds={getUserActiveFunds(user)}
+                      sectionPrefix="inactive"
+                    />
+                  ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
+
+      {users.length === 0 && (
+        <div
+          className="text-center py-12 text-muted-foreground bg-card border border-border rounded-xl"
+          data-ocid="user_management.empty_state"
+        >
+          <Users className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm">No users registered yet.</p>
+        </div>
+      )}
 
       {/* User detail dialog */}
       <Dialog
@@ -405,7 +561,8 @@ export function UserManagement() {
                         const opt = FUND_ACTIVATE_OPTIONS.find(
                           (o) => o.value === f,
                         );
-                        const active = selectedUser.activatedFunds?.[f] ?? true; // legacy: if activated, assume all
+                        const active =
+                          selectedUser.activatedFunds?.[f] ?? false;
                         const Icon = opt?.icon ?? Zap;
                         return (
                           <span
@@ -448,7 +605,7 @@ export function UserManagement() {
                               {acc.bankName}
                             </p>
                             <p className="text-muted-foreground text-xs font-mono">
-                              ••••{acc.accountNumber.slice(-4)} · {acc.fundType}
+                              {acc.accountNumber} · {acc.fundType}
                             </p>
                           </div>
                           <StatusBadge status={acc.status} />
@@ -514,9 +671,66 @@ export function UserManagement() {
                     Deactivate Panel
                   </Button>
                 )}
+                <Button
+                  onClick={() => {
+                    setDeleteConfirmUser(selectedUser);
+                    setSelectedUser(null);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full font-semibold mt-1 border-destructive/40 text-destructive hover:bg-destructive/10"
+                  data-ocid="user_detail.delete_button"
+                >
+                  <Trash2 className="mr-2 w-4 h-4" />
+                  Delete Account
+                </Button>
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Confirm Dialog */}
+      <Dialog
+        open={!!deleteConfirmUser}
+        onOpenChange={(open) => !open && setDeleteConfirmUser(null)}
+      >
+        <DialogContent
+          className="bg-card border-border text-foreground max-w-sm"
+          data-ocid="user_management.delete.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-foreground">
+              Delete User Account
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground py-2">
+            Are you sure you want to permanently delete{" "}
+            <span className="font-semibold text-foreground">
+              {deleteConfirmUser?.name}
+            </span>
+            ? All their data will be removed. This cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setDeleteConfirmUser(null)}
+              className="border-border text-muted-foreground hover:text-foreground"
+              data-ocid="user_management.delete.cancel_button"
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                deleteConfirmUser && handleDeleteUser(deleteConfirmUser.id)
+              }
+              data-ocid="user_management.delete.confirm_button"
+            >
+              <Trash2 className="mr-2 w-4 h-4" />
+              Delete Permanently
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

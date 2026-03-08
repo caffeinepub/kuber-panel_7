@@ -305,8 +305,7 @@ export function ActivationPanel({
         <div className="space-y-2.5 mb-4">
           {FUND_FEATURES.map((feat) => {
             const isFundActivated =
-              isActivated &&
-              (activatedFunds?.[feat.key] ?? (isActivated && !activatedFunds));
+              isActivated && (activatedFunds?.[feat.key] ?? false);
             return (
               <div key={feat.key} className="flex items-center gap-3">
                 {isFundActivated ? (

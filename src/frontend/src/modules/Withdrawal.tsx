@@ -22,11 +22,11 @@ import {
   generateUtrNumber,
   getAccumulatedCommission,
   getBankAccounts,
+  getBranchNameFromIFSC,
   getSession,
   getWithdrawals,
-  randomBranchName,
 } from "@/lib/storage";
-import { ArrowDownToLine, CheckCircle2, Loader2, Lock } from "lucide-react";
+import { ArrowDownToLine, Loader2, Lock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -144,7 +144,7 @@ export function Withdrawal({
         transactionId: txnId,
         referenceNumber: generateReferenceNumber(isNeft ? "neft" : "imps"),
         transferMode: mode,
-        bankBranch: randomBranchName(),
+        bankBranch: getBranchNameFromIFSC(selectedBank?.ifscCode ?? ""),
         ...(isNeft ? { utrNumber: generateUtrNumber() } : {}),
       };
     } else if (method === "usdt") {
@@ -205,17 +205,22 @@ export function Withdrawal({
     }
   };
 
-  const amountInput = (val: string, setter: (v: string) => void) => (
+  const amountInput = (
+    val: string,
+    setter: (v: string) => void,
+    isUsdt = false,
+  ) => (
     <div className="space-y-1.5">
       <Label className="text-muted-foreground text-sm">
-        Amount (₹) <span className="text-destructive">*</span>
+        {isUsdt ? "Amount (USDT)" : "Amount (₹)"}{" "}
+        <span className="text-destructive">*</span>
       </Label>
       <Input
         type="number"
         value={val}
         onChange={(e) => setter(e.target.value)}
-        placeholder="Enter withdrawal amount"
-        min="100"
+        placeholder={isUsdt ? "Enter USDT amount" : "Enter withdrawal amount"}
+        min={isUsdt ? "1" : "100"}
         className="bg-secondary border-border focus:border-primary h-11 text-foreground placeholder:text-muted-foreground/50"
       />
     </div>
@@ -252,15 +257,6 @@ export function Withdrawal({
               Request a withdrawal from your account
             </p>
           </div>
-        </div>
-
-        {/* Instant approval notice */}
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-green-500/10 border border-green-500/20">
-          <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
-          <p className="text-xs text-green-400">
-            Withdrawal requests are instantly approved. Status will show
-            "Transfer Successful" immediately.
-          </p>
         </div>
 
         <div className="bg-card border border-border rounded-xl p-6 card-glow">
@@ -374,7 +370,7 @@ export function Withdrawal({
                   className="bg-secondary border-border focus:border-primary h-11 text-foreground font-mono text-sm placeholder:text-muted-foreground/50"
                 />
               </div>
-              {amountInput(usdtAmount, setUsdtAmount)}
+              {amountInput(usdtAmount, setUsdtAmount, true)}
               <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
                 <p className="text-warning text-xs">
                   Only TRC20 network is supported. Double-check your wallet

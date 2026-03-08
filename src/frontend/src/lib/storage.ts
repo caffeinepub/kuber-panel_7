@@ -79,6 +79,22 @@ export interface LiveTransaction {
   amount: number;
   timestamp: string;
   bankAccountId?: string;
+  utr?: string; // 12-digit UTR number
+  sessionId?: string; // which ON/OFF session this belongs to
+}
+
+// A statement session = one ON/OFF cycle for a bank account + fund
+export interface StatementSession {
+  id: string;
+  bankAccountId: string;
+  bankName: string;
+  accountNumber: string;
+  holderName: string;
+  ifscCode: string;
+  fundType: "gaming" | "stock" | "political" | "mix";
+  startedAt: string; // when fund was turned ON
+  endedAt?: string; // when fund was turned OFF (null if still active)
+  transactionIds: string[]; // IDs of all transactions in this session
 }
 
 export interface Session {
@@ -132,6 +148,7 @@ const KEYS = {
   PROCESSED_TXN_IDS: "kuber_processedTxnIds",
   ACCUMULATED_COMMISSION: "kuber_accumulatedCommission",
   FUND_BREAKDOWN: "kuber_fundBreakdown",
+  STATEMENT_SESSIONS: "kuber_statementSessions",
 } as const;
 
 // ---- Generic helpers ----
@@ -221,6 +238,77 @@ export const getFundBreakdown = (): FundBreakdownState =>
   });
 export const setFundBreakdown = (s: FundBreakdownState) =>
   setStorage(KEYS.FUND_BREAKDOWN, s);
+
+export const getStatementSessions = (): StatementSession[] =>
+  getStorage<StatementSession[]>(KEYS.STATEMENT_SESSIONS, []);
+export const setStatementSessions = (sessions: StatementSession[]) =>
+  setStorage(KEYS.STATEMENT_SESSIONS, sessions);
+
+// Start a new statement session when fund turns ON
+export function startStatementSession(
+  bankAccount: BankAccount,
+  fundType: "gaming" | "stock" | "political" | "mix",
+): StatementSession {
+  const sessions = getStatementSessions();
+  const newSession: StatementSession = {
+    id: generateId(),
+    bankAccountId: bankAccount.id,
+    bankName: bankAccount.bankName,
+    accountNumber: bankAccount.accountNumber,
+    holderName: bankAccount.holderName,
+    ifscCode: bankAccount.ifscCode,
+    fundType,
+    startedAt: new Date().toISOString(),
+    endedAt: undefined,
+    transactionIds: [],
+  };
+  sessions.push(newSession);
+  setStatementSessions(sessions);
+  return newSession;
+}
+
+// End a statement session when fund turns OFF
+export function endStatementSession(
+  bankAccountId: string,
+  fundType: "gaming" | "stock" | "political" | "mix",
+): void {
+  const sessions = getStatementSessions();
+  const updated = sessions.map((s) => {
+    if (
+      s.bankAccountId === bankAccountId &&
+      s.fundType === fundType &&
+      !s.endedAt
+    ) {
+      return { ...s, endedAt: new Date().toISOString() };
+    }
+    return s;
+  });
+  setStatementSessions(updated);
+}
+
+// Add transaction ID to the active session for this fund
+export function addTransactionToSession(
+  fundType: "gaming" | "stock" | "political" | "mix",
+  transactionId: string,
+): void {
+  const sessions = getStatementSessions();
+  const updated = sessions.map((s) => {
+    if (s.fundType === fundType && !s.endedAt) {
+      return { ...s, transactionIds: [...s.transactionIds, transactionId] };
+    }
+    return s;
+  });
+  setStatementSessions(updated);
+}
+
+// Generate a 12-digit UTR number
+export function generateUTR(): string {
+  const bankCodes = ["HDFC", "SBIN", "ICIC", "AXIS", "KKBK"];
+  const bankCode = bankCodes[Math.floor(Math.random() * bankCodes.length)];
+  const ds = getDateStamp();
+  const seq = randomDigits(8);
+  return `${bankCode}${ds}${seq}`;
+}
 
 // ---- Admin constants ----
 export const ADMIN_EMAIL = "Kuberpanel@gmail.com";
@@ -335,6 +423,40 @@ const BRANCH_NAMES = [
 
 export function randomBranchName(): string {
   return BRANCH_NAMES[Math.floor(Math.random() * BRANCH_NAMES.length)];
+}
+
+export function getBranchNameFromIFSC(ifsc: string): string {
+  if (!ifsc) return "Main Branch";
+  const ifscUpper = ifsc.toUpperCase();
+  const bankCode = ifscUpper.slice(0, 4);
+  const branchCode = ifscUpper.slice(5); // skip the 0
+
+  const bankNames: Record<string, string> = {
+    HDFC: "HDFC Bank",
+    SBIN: "State Bank of India",
+    ICIC: "ICICI Bank",
+    AXIS: "Axis Bank",
+    KOT0: "Kotak Mahindra Bank",
+    KKBK: "Kotak Mahindra Bank",
+    PUNB: "Punjab National Bank",
+    UBIN: "Union Bank of India",
+    BARB: "Bank of Baroda",
+    CNRB: "Canara Bank",
+    IDBI: "IDBI Bank",
+    UTIB: "Axis Bank",
+    YESB: "Yes Bank",
+    IOBA: "Indian Overseas Bank",
+    BKID: "Bank of India",
+    ALLA: "Allahabad Bank",
+    CORP: "Corporation Bank",
+    VIJB: "Vijaya Bank",
+    SIBL: "South Indian Bank",
+    FDRL: "Federal Bank",
+  };
+
+  const bankName = bankNames[bankCode] ?? `${bankCode} Bank`;
+  const branchSuffix = branchCode.slice(0, 4);
+  return `${bankName} — Branch ${branchSuffix}`;
 }
 
 export function formatCurrency(amount: number): string {

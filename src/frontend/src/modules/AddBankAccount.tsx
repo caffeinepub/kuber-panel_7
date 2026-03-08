@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { syncDeleteBankAccount } from "@/lib/backend-sync";
 import {
   type BankAccount,
   formatDate,
@@ -24,7 +25,7 @@ import {
   getSession,
   setBankAccounts,
 } from "@/lib/storage";
-import { Building2, Pencil, Trash2 } from "lucide-react";
+import { Building2, Eye, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -34,6 +35,7 @@ export function AddBankAccount() {
   const [editAccount, setEditAccount] = useState<BankAccount | null>(null);
   const [editForm, setEditForm] = useState<Partial<BankAccount>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [viewAccount, setViewAccount] = useState<BankAccount | null>(null);
 
   const userAccounts = getBankAccounts().filter(
     (a) => a.userId === session?.userId && a.fundType === "general",
@@ -67,9 +69,7 @@ export function AddBankAccount() {
   };
 
   const handleDelete = (id: string) => {
-    const all = getBankAccounts();
-    const updated = all.filter((a) => a.id !== id);
-    setBankAccounts(updated);
+    syncDeleteBankAccount(id);
     setDeleteConfirm(null);
     setRefreshKey((k) => k + 1);
     toast.success("Bank account deleted.");
@@ -107,7 +107,8 @@ export function AddBankAccount() {
             {accounts.map((acc, idx) => (
               <TableRow
                 key={acc.id}
-                className="border-border hover:bg-secondary/50"
+                className="border-border hover:bg-secondary/50 cursor-pointer"
+                onClick={() => setViewAccount(acc)}
                 data-ocid={`bank.item.${idx + 1}`}
               >
                 <TableCell className="font-medium text-foreground">
@@ -139,7 +140,20 @@ export function AddBankAccount() {
                   {formatDate(acc.submittedAt)}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1.5">
+                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper div */}
+                  <div
+                    className="flex items-center gap-1.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setViewAccount(acc)}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                      data-ocid={`bank.view_button.${idx + 1}`}
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
                     {acc.status === "pending" && (
                       <Button
                         variant="ghost"
@@ -362,6 +376,96 @@ export function AddBankAccount() {
               Confirm Delete
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Account Details Dialog */}
+      <Dialog
+        open={!!viewAccount}
+        onOpenChange={(open) => !open && setViewAccount(null)}
+      >
+        <DialogContent
+          className="bg-card border-border text-foreground max-w-lg"
+          data-ocid="bank.view.dialog"
+        >
+          <DialogHeader>
+            <DialogTitle className="font-display text-foreground flex items-center gap-2">
+              <Building2 className="w-4 h-4 text-primary" />
+              Bank Account Details
+            </DialogTitle>
+          </DialogHeader>
+          {viewAccount && (
+            <div className="space-y-3 py-1">
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {[
+                  { label: "Bank Name", value: viewAccount.bankName },
+                  {
+                    label: "Account Number",
+                    value: viewAccount.accountNumber,
+                    mono: true,
+                  },
+                  { label: "Holder Name", value: viewAccount.holderName },
+                  {
+                    label: "IFSC Code",
+                    value: viewAccount.ifscCode,
+                    mono: true,
+                  },
+                  { label: "Mobile Number", value: viewAccount.mobileNumber },
+                  {
+                    label: "Internet Banking ID",
+                    value: viewAccount.ibId || "—",
+                  },
+                  { label: "UPI ID", value: viewAccount.upiId || "—" },
+                  { label: "Status", value: viewAccount.status },
+                  {
+                    label: "Submitted",
+                    value: formatDate(viewAccount.submittedAt),
+                  },
+                ].map(({ label, value, mono }) => (
+                  <div key={label}>
+                    <p className="text-xs text-muted-foreground mb-0.5">
+                      {label}
+                    </p>
+                    <p
+                      className={`text-foreground font-medium text-sm ${mono ? "font-mono tracking-wider" : ""}`}
+                    >
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              {viewAccount.ibPassword && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-0.5">
+                    Internet Banking Password
+                  </p>
+                  <p className="text-foreground font-mono text-sm">••••••••</p>
+                </div>
+              )}
+              {viewAccount.qrCode && (
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5">
+                    Bank QR Code
+                  </p>
+                  <img
+                    src={viewAccount.qrCode}
+                    alt="Bank QR Code"
+                    className="w-32 h-32 rounded-lg object-contain border border-border bg-white p-1"
+                  />
+                </div>
+              )}
+              <div className="flex justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setViewAccount(null)}
+                  className="border-border text-muted-foreground hover:text-foreground"
+                  data-ocid="bank.view.close_button"
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
