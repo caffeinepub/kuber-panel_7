@@ -25,11 +25,13 @@ import {
   getSession,
   setBankAccounts,
 } from "@/lib/storage";
-import { Building2, Eye, Pencil, Trash2 } from "lucide-react";
+import { Building2, Eye, Lock, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function AddBankAccount() {
+export function AddBankAccount({
+  isActivated = true,
+}: { isActivated?: boolean }) {
   const session = getSession();
   const [refreshKey, setRefreshKey] = useState(0);
   const [editAccount, setEditAccount] = useState<BankAccount | null>(null);
@@ -183,6 +185,24 @@ export function AddBankAccount() {
       </div>
     );
   };
+
+  if (!isActivated) {
+    return (
+      <div className="relative space-y-6 animate-fade-in-up">
+        <div className="flex flex-col items-center justify-center gap-4 py-20">
+          <div className="w-16 h-16 rounded-full bg-card border-2 border-border flex items-center justify-center">
+            <Lock className="w-7 h-7 text-primary" />
+          </div>
+          <h3 className="text-lg font-display font-bold text-foreground">
+            Locked
+          </h3>
+          <p className="text-muted-foreground text-sm text-center max-w-xs">
+            Activate your panel to add bank accounts.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in-up">

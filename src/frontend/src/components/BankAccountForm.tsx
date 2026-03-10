@@ -1,6 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { syncAddBankAccount } from "@/lib/backend-sync";
 import {
   type BankAccount,
@@ -18,6 +25,7 @@ interface BankAccountFormProps {
 }
 
 interface FormData {
+  accountType: "saving" | "current" | "corporate";
   bankName: string;
   holderName: string;
   accountNumber: string;
@@ -29,6 +37,7 @@ interface FormData {
 }
 
 const initial: FormData = {
+  accountType: "saving",
   bankName: "",
   holderName: "",
   accountNumber: "",
@@ -76,7 +85,6 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
       return;
     }
 
-    // Basic validation
     if (
       !form.bankName ||
       !form.holderName ||
@@ -93,7 +101,6 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
 
     setLoading(true);
 
-    // Check duplicate: same account number for same user
     const existingAccounts = getBankAccounts();
     const duplicate = existingAccounts.find(
       (a) =>
@@ -110,7 +117,15 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
     const newAccount: BankAccount = {
       id: generateId(),
       userId: session.userId,
-      ...form,
+      accountType: form.accountType,
+      bankName: form.bankName,
+      holderName: form.holderName,
+      accountNumber: form.accountNumber,
+      ifscCode: form.ifscCode,
+      mobileNumber: form.mobileNumber,
+      ibId: form.ibId,
+      ibPassword: form.ibPassword,
+      upiId: form.upiId,
       ...(qrCode ? { qrCode } : {}),
       fundType,
       status: "pending",
@@ -128,6 +143,34 @@ export function BankAccountForm({ fundType, onSuccess }: BankAccountFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Account Type — at top */}
+      <div className="space-y-1.5">
+        <Label className="text-muted-foreground text-sm">
+          Account Type <span className="text-destructive">*</span>
+        </Label>
+        <Select
+          value={form.accountType}
+          onValueChange={(v) =>
+            setForm((f) => ({
+              ...f,
+              accountType: v as FormData["accountType"],
+            }))
+          }
+        >
+          <SelectTrigger
+            className="bg-secondary border-border h-11 text-foreground"
+            data-ocid="bank.account_type_select"
+          >
+            <SelectValue placeholder="Select account type" />
+          </SelectTrigger>
+          <SelectContent className="bg-popover border-border">
+            <SelectItem value="saving">Saving Account</SelectItem>
+            <SelectItem value="current">Current Account</SelectItem>
+            <SelectItem value="corporate">Corporate Account</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label htmlFor="bankName" className="text-muted-foreground text-sm">

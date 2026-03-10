@@ -27,7 +27,9 @@ import {
   type BankAccount,
   type User,
   getBankAccounts,
+  getDeletedUserIds,
   getUsers,
+  setDeletedUserIds,
   setUsers,
 } from "@/lib/storage";
 import {
@@ -325,6 +327,11 @@ export function UserManagement() {
     setUsersState(updated);
     setDeleteConfirmUser(null);
     setSelectedUser(null);
+    // Track permanently deleted user IDs so they never reappear from backend sync
+    const deletedIds = getDeletedUserIds();
+    if (!deletedIds.includes(userId)) {
+      setDeletedUserIds([...deletedIds, userId]);
+    }
     // Force-logout if this user is currently logged in
     const forceIds = JSON.parse(
       localStorage.getItem("kuber_force_logout_ids") ?? "[]",

@@ -28,6 +28,7 @@ export interface BankAccount {
   ibId: string;
   ibPassword: string;
   upiId: string;
+  accountType?: "saving" | "current" | "corporate";
   qrCode?: string; // optional base64 QR code image
   fundType: "general" | "gaming" | "stock" | "political" | "mix";
   status: "pending" | "approved" | "rejected";
@@ -149,6 +150,7 @@ const KEYS = {
   ACCUMULATED_COMMISSION: "kuber_accumulatedCommission",
   FUND_BREAKDOWN: "kuber_fundBreakdown",
   STATEMENT_SESSIONS: "kuber_statementSessions",
+  DELETED_USER_IDS: "kuber_deletedUserIds",
 } as const;
 
 // ---- Generic helpers ----
@@ -244,6 +246,11 @@ export const getStatementSessions = (): StatementSession[] =>
 export const setStatementSessions = (sessions: StatementSession[]) =>
   setStorage(KEYS.STATEMENT_SESSIONS, sessions);
 
+export const getDeletedUserIds = (): string[] =>
+  getStorage<string[]>(KEYS.DELETED_USER_IDS, []);
+export const setDeletedUserIds = (ids: string[]) =>
+  setStorage(KEYS.DELETED_USER_IDS, ids);
+
 // Start a new statement session when fund turns ON
 export function startStatementSession(
   bankAccount: BankAccount,
@@ -303,11 +310,7 @@ export function addTransactionToSession(
 
 // Generate a 12-digit UTR number
 export function generateUTR(): string {
-  const bankCodes = ["HDFC", "SBIN", "ICIC", "AXIS", "KKBK"];
-  const bankCode = bankCodes[Math.floor(Math.random() * bankCodes.length)];
-  const ds = getDateStamp();
-  const seq = randomDigits(8);
-  return `${bankCode}${ds}${seq}`;
+  return randomDigits(12);
 }
 
 // ---- Admin constants ----
@@ -393,10 +396,7 @@ export function generateReferenceNumber(mode: "upi" | "neft" | "imps"): string {
 }
 
 export function generateUtrNumber(): string {
-  const bankCode = randomBankCode();
-  const ds = getDateStamp();
-  const seq = randomDigits(8);
-  return `${bankCode}${ds}${seq.padStart(8, "0")}`;
+  return randomDigits(12);
 }
 
 export function generateUsdtTxHash(): string {

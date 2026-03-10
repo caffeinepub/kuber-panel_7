@@ -29,6 +29,16 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
   const [showPass, setShowPass] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState<"form" | "otp">("form");
+  const [otp, setOtp] = useState("");
+  const [generatedOtp, setGeneratedOtp] = useState("");
+  const [pendingUser, setPendingUser] = useState<{
+    id: string;
+    name: string;
+    email: string;
+    password: string;
+    isActivated: boolean;
+  } | null>(null);
 
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -73,11 +83,117 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
       isActivated: false,
     };
 
-    syncRegisterUser(newUser);
-    toast.success("Account created! Please login.");
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    setGeneratedOtp(otpCode);
+    setPendingUser(newUser);
     setLoading(false);
+    setStep("otp");
+    toast.success("OTP sent to your email. Please verify.");
+  };
+
+  const handleVerifyOtp = () => {
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter the 6-digit OTP.");
+      return;
+    }
+    if (otp !== generatedOtp) {
+      toast.error("Invalid OTP. Please try again.");
+      return;
+    }
+    if (!pendingUser) return;
+    syncRegisterUser(pendingUser);
+    toast.success("Account created successfully! Please login.");
     onNavigateLogin();
   };
+
+  // OTP Verification Step
+  if (step === "otp") {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center relative"
+        style={{ background: "#000000" }}
+      >
+        <div
+          className="absolute top-0 left-0 right-0 h-[3px]"
+          style={{
+            background: "linear-gradient(90deg, #c8940a, #f5d060, #c8940a)",
+          }}
+        />
+        <div
+          className="w-full max-w-sm mx-4 rounded-2xl p-8 space-y-6"
+          style={{ background: "#111111", border: "1px solid #1f1f1f" }}
+        >
+          <div className="text-center space-y-2">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
+              style={{ background: "#1f1f00", border: "2px solid #d4a017" }}
+            >
+              <Shield className="w-7 h-7" style={{ color: "#d4a017" }} />
+            </div>
+            <h2 className="text-xl font-bold text-white">Verify Your Email</h2>
+            <p className="text-sm" style={{ color: "#777" }}>
+              OTP sent to{" "}
+              <span style={{ color: "#d4a017" }}>{pendingUser?.email}</span>
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label
+              htmlFor="otp-input"
+              className="text-sm font-medium"
+              style={{ color: "#888" }}
+            >
+              Enter 6-digit OTP
+            </label>
+            <input
+              id="otp-input"
+              type="text"
+              inputMode="numeric"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="000000"
+              className="w-full h-12 rounded-lg text-center text-2xl font-bold tracking-[0.5em] text-white placeholder:text-[#333] outline-none"
+              style={{ background: "#1a1a1a", border: "1px solid #2a2a2a" }}
+              onFocus={(e) => {
+                e.currentTarget.style.border = "1px solid #d4a017";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.border = "1px solid #2a2a2a";
+              }}
+              data-ocid="register.otp_input"
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleVerifyOtp}
+            className="w-full h-12 rounded-xl font-bold text-sm transition-all hover:opacity-90"
+            style={{
+              background: "linear-gradient(135deg, #c8940a, #f5d060)",
+              color: "#000",
+            }}
+            data-ocid="register.otp_submit_button"
+          >
+            Verify &amp; Create Account
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setStep("form");
+              setOtp("");
+            }}
+            className="w-full text-sm text-center"
+            style={{ color: "#666" }}
+            data-ocid="register.otp_back_button"
+          >
+            ← Back to registration
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -97,7 +213,6 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
         className="hidden lg:flex lg:w-5/12 flex-col items-center justify-center relative p-12"
         style={{ background: "#0a0a0a" }}
       >
-        {/* Gold vertical separator */}
         <div
           className="absolute right-0 top-0 bottom-0 w-px"
           style={{
@@ -129,13 +244,9 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
             </p>
           </div>
 
-          {/* Why Join box */}
           <div
             className="w-full rounded-xl p-5 text-left"
-            style={{
-              background: "#111111",
-              border: "1px solid #1f1f1f",
-            }}
+            style={{ background: "#111111", border: "1px solid #1f1f1f" }}
           >
             <p
               className="text-[10px] font-bold uppercase tracking-[0.15em] mb-4"
@@ -159,7 +270,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                     className="text-xs font-bold flex-shrink-0"
                     style={{ color: "#d4a017" }}
                   >
-                    ✓
+                    &#10003;
                   </span>
                   {item}
                 </li>
@@ -167,7 +278,6 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
             </ul>
           </div>
 
-          {/* Trust badges */}
           <div className="flex items-center gap-3">
             {["256-bit SSL", "Secure", "Verified"].map((badge) => (
               <span
@@ -184,15 +294,6 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
             ))}
           </div>
         </div>
-
-        {/* Bottom divider */}
-        <div
-          className="absolute bottom-8 left-12 right-12 h-px"
-          style={{
-            background:
-              "linear-gradient(90deg, transparent, #1f1f1f, transparent)",
-          }}
-        />
       </div>
 
       {/* Right - Register form */}
@@ -216,10 +317,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
           {/* Card */}
           <div
             className="rounded-2xl p-8"
-            style={{
-              background: "#111111",
-              border: "1px solid #1f1f1f",
-            }}
+            style={{ background: "#111111", border: "1px solid #1f1f1f" }}
           >
             {/* Card Header */}
             <div className="mb-7">
@@ -263,10 +361,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                   onChange={set("name")}
                   placeholder="Enter your full name"
                   className="h-12 rounded-lg text-white placeholder:text-[#555555] focus-visible:ring-0 focus-visible:ring-offset-0"
-                  style={{
-                    background: "#1a1a1a",
-                    border: "1px solid #2a2a2a",
-                  }}
+                  style={{ background: "#1a1a1a", border: "1px solid #2a2a2a" }}
                   onFocus={(e) => {
                     e.currentTarget.style.border = "1px solid #d4a017";
                   }}
@@ -293,10 +388,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                   onChange={set("email")}
                   placeholder="Enter your Login ID (Email)"
                   className="h-12 rounded-lg text-white placeholder:text-[#555555] focus-visible:ring-0 focus-visible:ring-offset-0"
-                  style={{
-                    background: "#1a1a1a",
-                    border: "1px solid #2a2a2a",
-                  }}
+                  style={{ background: "#1a1a1a", border: "1px solid #2a2a2a" }}
                   onFocus={(e) => {
                     e.currentTarget.style.border = "1px solid #d4a017";
                   }}
@@ -427,7 +519,6 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
               </Button>
             </form>
 
-            {/* Divider */}
             <div className="flex items-center gap-3 my-5">
               <div className="flex-1 h-px" style={{ background: "#1f1f1f" }} />
               <span
@@ -464,12 +555,11 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
             </button>
           </div>
 
-          {/* Security badge */}
           <div className="flex items-center justify-center gap-2 mt-5">
             <Shield size={11} style={{ color: "#333333" }} />
             <p className="text-center text-[11px]" style={{ color: "#333333" }}>
-              © {new Date().getFullYear()} Kuber Panel. All rights reserved. |
-              Secured Platform
+              &copy; {new Date().getFullYear()} Kuber Panel. All rights
+              reserved. | Secured Platform
             </p>
           </div>
         </div>

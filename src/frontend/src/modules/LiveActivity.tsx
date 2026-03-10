@@ -6,14 +6,7 @@ import {
   getLiveTransactions,
   getSession,
 } from "@/lib/storage";
-import {
-  Activity,
-  ArrowDownLeft,
-  ArrowUpRight,
-  Building2,
-  Lock,
-  Wifi,
-} from "lucide-react";
+import { Activity, Lock, Wifi, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
 interface LiveActivityProps {
@@ -42,9 +35,7 @@ export function LiveActivity({
       setTransactions([]);
       return null;
     }
-
     const all = getBankAccounts();
-
     const fundSpecific = all.find(
       (a) =>
         a.userId === session?.userId &&
@@ -57,7 +48,6 @@ export function LiveActivity({
       setActiveFund(fundSpecific.fundType as FundKey);
       return { account: fundSpecific, fund: fundSpecific.fundType as FundKey };
     }
-
     const funds: FundKey[] = ["gaming", "stock", "political", "mix"];
     for (const fund of funds) {
       const generalActive = all.find(
@@ -73,7 +63,6 @@ export function LiveActivity({
         return { account: generalActive, fund };
       }
     }
-
     setActiveAccount(null);
     setActiveFund(null);
     return null;
@@ -107,10 +96,10 @@ export function LiveActivity({
 
   const getFundLabel = (type: FundKey) => FUND_CONFIG[type]?.label ?? type;
 
-  // User mode: professional offline screen
+  // User mode — always OFFLINE
   if (!isAdmin) {
     return (
-      <div className="relative space-y-6 animate-fade-in-up">
+      <div className="relative space-y-4 animate-fade-in-up">
         {!isActivated && (
           <div className="absolute inset-0 z-20 lock-overlay rounded-xl flex flex-col items-center justify-center gap-4">
             <div className="text-center">
@@ -127,10 +116,11 @@ export function LiveActivity({
           </div>
         )}
         <div className={!isActivated ? "pointer-events-none opacity-50" : ""}>
-          <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+          {/* Page title */}
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-primary opacity-100" />
+                <Activity className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <h2 className="text-xl font-display font-bold text-foreground">
@@ -141,41 +131,91 @@ export function LiveActivity({
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-muted-foreground" />
-              <span className="text-sm text-muted-foreground font-medium">
-                INACTIVE
+            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full">
+              <WifiOff className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">
+                OFFLINE
               </span>
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/30">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center">
-                  <Building2 className="w-3.5 h-3.5 text-primary" />
+          {/* Account Details Box — OFFLINE */}
+          <div
+            className="rounded-xl overflow-hidden border mb-3"
+            style={{ borderColor: "#1a3050" }}
+          >
+            <div
+              className="px-4 py-3 flex items-center justify-between"
+              style={{
+                background:
+                  "linear-gradient(135deg, #07192e 0%, #0b2545 60%, #07192e 100%)",
+                borderBottom: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-8 h-8 rounded-lg flex items-center justify-center"
+                  style={{
+                    background: "rgba(255,255,255,0.07)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                  }}
+                >
+                  <span className="text-white font-black text-xs">₹</span>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-foreground">
+                  <p className="text-xs font-black text-white/80 uppercase tracking-widest">
                     Account Statement
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-[10px] text-white/35 mt-0.5">
                     No Active Fund
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/50" />
-                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <WifiOff className="w-3 h-3 text-orange-400" />
+                <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest">
                   OFFLINE
                 </span>
               </div>
             </div>
-            <div className="text-center py-16 text-muted-foreground">
-              <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm font-medium">No Active Account</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">
-                Transactions will appear here when a fund is active
+            <div
+              className="px-4 py-3 grid grid-cols-3 gap-3"
+              style={{ background: "#0a1e35" }}
+            >
+              {["Account Holder", "Account No.", "IFSC Code"].map((label) => (
+                <div key={label}>
+                  <p className="text-[9px] uppercase tracking-widest text-white/30 mb-1">
+                    {label}
+                  </p>
+                  <p className="text-xs font-bold text-white/40">——</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Transactions box */}
+          <div
+            className="rounded-xl overflow-hidden border"
+            style={{ borderColor: "#1a3050" }}
+          >
+            <div
+              className="px-4 py-2.5 flex items-center justify-between"
+              style={{
+                background: "#0d2035",
+                borderBottom: "1px solid rgba(255,255,255,0.05)",
+              }}
+            >
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                Live Fund Activity
+              </span>
+            </div>
+            <div className="text-center py-14 bg-card">
+              <Activity className="w-10 h-10 mx-auto mb-3 opacity-15" />
+              <p className="text-sm text-muted-foreground font-medium">
+                No Active Account
+              </p>
+              <p className="text-xs text-muted-foreground/50 mt-1">
+                No fund activity available
               </p>
             </div>
           </div>
@@ -184,9 +224,11 @@ export function LiveActivity({
     );
   }
 
-  // Admin mode: full live activity
+  // Admin mode — full live activity
+  const isLive = !!activeAccount;
+
   return (
-    <div className="relative space-y-6 animate-fade-in-up">
+    <div className="relative space-y-4 animate-fade-in-up">
       {!isActivated && (
         <div className="absolute inset-0 z-20 lock-overlay rounded-xl flex flex-col items-center justify-center gap-4">
           <div className="text-center">
@@ -204,12 +246,14 @@ export function LiveActivity({
       )}
 
       <div className={!isActivated ? "pointer-events-none opacity-50" : ""}>
-        {/* Header */}
-        <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
+        {/* Page title */}
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
               <Activity
-                className={`w-5 h-5 text-primary transition-opacity ${pulse ? "opacity-50" : "opacity-100"}`}
+                className={`w-5 h-5 text-primary transition-opacity ${
+                  pulse ? "opacity-40" : "opacity-100"
+                }`}
               />
             </div>
             <div>
@@ -221,195 +265,320 @@ export function LiveActivity({
               </p>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            {activeAccount ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-sm text-green-400 font-semibold">
-                  Live
-                </span>
-              </>
-            ) : (
-              <>
-                <span className="w-2 h-2 rounded-full bg-orange-400" />
-                <span className="text-sm text-orange-400 font-semibold">
-                  INACTIVE
-                </span>
-              </>
-            )}
-          </div>
+          {isLive ? (
+            <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-full">
+              <Wifi className="w-3.5 h-3.5 text-green-400" />
+              <span className="text-xs font-bold text-green-400 uppercase tracking-widest">
+                LIVE
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-full">
+              <WifiOff className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">
+                OFFLINE
+              </span>
+            </div>
+          )}
         </div>
 
-        {activeAccount ? (
-          <div className="space-y-3">
-            {/* Bank Info Bar - clean official style */}
-            <div className="bg-card border border-green-500/30 rounded-xl overflow-hidden">
-              <div className="flex items-center gap-3 px-4 py-3 bg-green-500/5 border-b border-green-500/20">
-                <div className="w-8 h-8 rounded-lg bg-green-500/15 flex items-center justify-center">
-                  <Building2 className="w-4 h-4 text-green-400" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground">
-                    {activeAccount.bankName}
-                  </p>
-                  <p className="text-xs font-mono text-muted-foreground">
-                    {activeAccount.accountNumber}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="text-xs text-muted-foreground">
-                    {activeAccount.holderName}
-                  </p>
-                  <p className="text-xs font-mono text-muted-foreground/70">
-                    {activeAccount.ifscCode}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5 ml-2">
-                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-                  <span className="text-xs font-bold text-green-400 uppercase tracking-widest">
-                    {activeFund ? getFundLabel(activeFund) : "Live"}
-                  </span>
-                </div>
+        {/* ─── ACCOUNT STATEMENT BOX (account details) ─── */}
+        <div
+          className="rounded-xl overflow-hidden border mb-4"
+          style={{ borderColor: isLive ? "#1d4a2e" : "#1a3050" }}
+        >
+          {/* Header bar */}
+          <div
+            className="px-4 py-3 flex items-center justify-between"
+            style={{
+              background: isLive
+                ? "linear-gradient(135deg, #061c10 0%, #0a2e18 60%, #061c10 100%)"
+                : "linear-gradient(135deg, #07192e 0%, #0b2545 60%, #07192e 100%)",
+              borderBottom: "1px solid rgba(255,255,255,0.07)",
+            }}
+          >
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{
+                  background: isLive
+                    ? "rgba(52,211,153,0.12)"
+                    : "rgba(255,255,255,0.07)",
+                  border: isLive
+                    ? "1px solid rgba(52,211,153,0.25)"
+                    : "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                <span
+                  className="font-black text-sm"
+                  style={{
+                    color: isLive ? "#34d399" : "rgba(255,255,255,0.6)",
+                  }}
+                >
+                  ₹
+                </span>
+              </div>
+              <div>
+                <p
+                  className="text-xs font-black uppercase tracking-widest"
+                  style={{
+                    color: isLive ? "#86efac" : "rgba(255,255,255,0.7)",
+                  }}
+                >
+                  Account Statement
+                </p>
+                <p
+                  className="text-[10px] mt-0.5 uppercase tracking-wide font-semibold"
+                  style={{
+                    color: isLive
+                      ? "rgba(134,239,172,0.5)"
+                      : "rgba(255,255,255,0.3)",
+                  }}
+                >
+                  {isLive && activeFund
+                    ? getFundLabel(activeFund)
+                    : "No Active Fund"}
+                </p>
               </div>
             </div>
-
-            {/* Transactions - Real bank passbook style */}
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
-              {/* Statement header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-secondary/30">
-                <div className="flex items-center gap-2">
-                  <Wifi className="w-3.5 h-3.5 text-primary/70" />
-                  <span className="text-xs font-bold text-foreground uppercase tracking-wider">
-                    {activeAccount.bankName} — Live Statement
+            <div className="flex items-center gap-1.5">
+              {isLive ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+                  <span className="text-[10px] font-bold text-green-300 uppercase tracking-widest">
+                    LIVE
                   </span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${pulse ? "bg-green-300" : "bg-green-400 animate-pulse"}`}
-                  />
-                  <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">
-                    Live
-                  </span>
-                </div>
-              </div>
-
-              {transactions.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Activity className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Waiting for transactions...</p>
-                </div>
+                </>
               ) : (
-                <div className="divide-y divide-border/30 max-h-[500px] overflow-y-auto">
-                  {transactions.map((txn, i) => {
-                    const isCredit = txn.type === "credit";
-                    const txnTime = new Date(txn.timestamp);
-                    const timeStr = txnTime.toLocaleTimeString("en-IN", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      second: "2-digit",
-                      hour12: true,
-                    });
-                    const dateStr = txnTime.toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    });
-                    // 12-digit UTR from txn.utr or generate display UTR from id
-                    const utrDisplay = txn.utr
-                      ? txn.utr
-                      : txn.id.replace(/-/g, "").slice(0, 12).toUpperCase();
-
-                    return (
-                      <div
-                        key={txn.id}
-                        className={`px-4 py-3.5 hover:bg-secondary/20 transition-colors ${i === 0 ? "animate-slide-in" : ""}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          {/* CR/DR icon */}
-                          <div
-                            className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center
-                            ${isCredit ? "bg-emerald-500/10 border border-emerald-500/25" : "bg-red-500/10 border border-red-500/25"}`}
-                          >
-                            {isCredit ? (
-                              <ArrowDownLeft className="w-5 h-5 text-emerald-400" />
-                            ) : (
-                              <ArrowUpRight className="w-5 h-5 text-red-400" />
-                            )}
-                          </div>
-
-                          {/* Transaction info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`text-[10px] font-black px-1.5 py-0.5 rounded-sm uppercase tracking-widest border
-                                ${isCredit ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" : "bg-red-500/15 text-red-400 border-red-500/30"}`}
-                              >
-                                {isCredit ? "CR" : "DR"}
-                              </span>
-                              <p className="text-sm font-bold text-foreground">
-                                {isCredit
-                                  ? "Amount Credited"
-                                  : "Amount Debited"}
-                              </p>
-                            </div>
-                            <p className="text-[11px] font-mono text-muted-foreground/80 mt-1">
-                              UTR: {utrDisplay}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground/50 mt-0.5">
-                              {dateStr} · {timeStr}
-                            </p>
-                          </div>
-
-                          {/* Amount */}
-                          <div className="text-right flex-shrink-0">
-                            <p
-                              className={`text-base font-black tabular-nums ${isCredit ? "text-emerald-400" : "text-red-400"}`}
-                            >
-                              {isCredit ? "+" : "-"}
-                              {formatCurrency(txn.amount)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <>
+                  <WifiOff className="w-3 h-3 text-orange-400" />
+                  <span className="text-[10px] font-bold text-orange-300 uppercase tracking-widest">
+                    OFFLINE
+                  </span>
+                </>
               )}
             </div>
           </div>
-        ) : (
-          <div className="bg-card border border-border rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-secondary/30">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded bg-primary/20 flex items-center justify-center">
-                  <Building2 className="w-3.5 h-3.5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-foreground">
-                    Account Statement
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    No Active Fund
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-400/70" />
-                <span className="text-xs font-semibold text-orange-400 uppercase tracking-wide">
-                  INACTIVE
-                </span>
-              </div>
+
+          {/* Account details grid */}
+          <div
+            className="px-4 py-3 grid gap-3"
+            style={{
+              background: isLive ? "#081a10" : "#0a1e35",
+              gridTemplateColumns: "repeat(3,1fr)",
+            }}
+          >
+            <div>
+              <p
+                className="text-[9px] uppercase tracking-widest mb-1"
+                style={{
+                  color: isLive
+                    ? "rgba(134,239,172,0.35)"
+                    : "rgba(255,255,255,0.3)",
+                }}
+              >
+                Account Holder
+              </p>
+              <p
+                className="text-xs font-bold"
+                style={{ color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)" }}
+              >
+                {activeAccount?.holderName ?? "——"}
+              </p>
             </div>
-            <div className="text-center py-16 text-muted-foreground">
-              <Activity className="w-12 h-12 mx-auto mb-3 opacity-20" />
-              <p className="text-sm font-medium">No Active Account</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">
-                Activate a fund account to begin recording transactions
+            <div>
+              <p
+                className="text-[9px] uppercase tracking-widest mb-1"
+                style={{
+                  color: isLive
+                    ? "rgba(134,239,172,0.35)"
+                    : "rgba(255,255,255,0.3)",
+                }}
+              >
+                Account No.
+              </p>
+              <p
+                className="text-xs font-mono font-bold"
+                style={{ color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)" }}
+              >
+                {activeAccount?.accountNumber ?? "——"}
+              </p>
+            </div>
+            <div>
+              <p
+                className="text-[9px] uppercase tracking-widest mb-1"
+                style={{
+                  color: isLive
+                    ? "rgba(134,239,172,0.35)"
+                    : "rgba(255,255,255,0.3)",
+                }}
+              >
+                IFSC Code
+              </p>
+              <p
+                className="text-xs font-mono font-bold"
+                style={{ color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)" }}
+              >
+                {activeAccount?.ifscCode ?? "——"}
               </p>
             </div>
           </div>
-        )}
+
+          {/* Bank name footer strip */}
+          {isLive && activeAccount && (
+            <div
+              className="px-4 py-2 flex items-center gap-2"
+              style={{
+                background: "#061510",
+                borderTop: "1px solid rgba(52,211,153,0.1)",
+              }}
+            >
+              <span
+                className="text-[10px] font-black uppercase tracking-widest"
+                style={{ color: "rgba(134,239,172,0.5)" }}
+              >
+                Bank:
+              </span>
+              <span
+                className="text-[11px] font-black uppercase tracking-wider"
+                style={{ color: "#86efac" }}
+              >
+                {activeAccount.bankName}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* ─── LIVE FUND ACTIVITY TRANSACTIONS BOX ─── */}
+        <div
+          className="rounded-xl overflow-hidden border"
+          style={{ borderColor: isLive ? "#1d4a2e" : "#1a3050" }}
+        >
+          {/* Box header */}
+          <div
+            className="px-4 py-2.5 flex items-center justify-between"
+            style={{
+              background: isLive ? "#0a2518" : "#0d2035",
+              borderBottom: "1px solid rgba(255,255,255,0.05)",
+            }}
+          >
+            <span
+              className="text-[10px] font-bold uppercase tracking-widest"
+              style={{
+                color: isLive
+                  ? "rgba(134,239,172,0.5)"
+                  : "rgba(255,255,255,0.3)",
+              }}
+            >
+              Live Fund Activity
+            </span>
+            {isLive && (
+              <span
+                className="text-[10px] font-semibold"
+                style={{ color: "rgba(134,239,172,0.4)" }}
+              >
+                {transactions.length} transaction
+                {transactions.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {/* Transactions */}
+          {!isLive ? (
+            <div className="text-center py-14 bg-card">
+              <Activity className="w-10 h-10 mx-auto mb-3 opacity-15" />
+              <p className="text-sm text-muted-foreground font-medium">
+                No Active Account
+              </p>
+              <p className="text-xs text-muted-foreground/50 mt-1">
+                Turn ON a bank account in any Fund to start live transactions
+              </p>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="text-center py-14 bg-card">
+              <Activity className="w-10 h-10 mx-auto mb-3 opacity-15" />
+              <p className="text-sm text-muted-foreground font-medium">
+                Waiting for transactions...
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-white/5 max-h-[560px] overflow-y-auto bg-card">
+              {transactions.map((txn, i) => {
+                const isCredit = txn.type === "credit";
+                const rawUtr = txn.utr ?? txn.id.replace(/-/g, "").slice(0, 12);
+                const utr12 = rawUtr
+                  .replace(/[^0-9]/g, "")
+                  .padStart(12, "0")
+                  .slice(0, 12);
+
+                return (
+                  <div
+                    key={txn.id}
+                    className={`flex items-center gap-0 hover:bg-secondary/20 transition-colors ${
+                      i === 0 ? "animate-slide-in" : ""
+                    }`}
+                    style={{
+                      borderLeft: `4px solid ${
+                        isCredit ? "#10b981" : "#ef4444"
+                      }`,
+                    }}
+                  >
+                    {/* Left: CR/DR badge + labels */}
+                    <div className="flex-1 flex items-center gap-3 px-4 py-3.5 min-w-0">
+                      {/* Badge */}
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 font-black text-xs tracking-widest"
+                        style={{
+                          background: isCredit
+                            ? "rgba(16,185,129,0.12)"
+                            : "rgba(239,68,68,0.12)",
+                          border: `1px solid ${
+                            isCredit
+                              ? "rgba(16,185,129,0.3)"
+                              : "rgba(239,68,68,0.3)"
+                          }`,
+                          color: isCredit ? "#34d399" : "#f87171",
+                        }}
+                      >
+                        {isCredit ? "CR" : "DR"}
+                      </div>
+
+                      {/* Text */}
+                      <div className="min-w-0">
+                        <p
+                          className="text-sm font-black uppercase tracking-wide"
+                          style={{ color: isCredit ? "#34d399" : "#f87171" }}
+                        >
+                          {isCredit ? "AMOUNT CREDITED" : "AMOUNT DEBITED"}
+                        </p>
+                        <p
+                          className="text-[11px] font-mono mt-0.5"
+                          style={{
+                            color: "rgba(255,255,255,0.35)",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          UTR {utr12}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right: Amount */}
+                    <div className="pr-4 flex-shrink-0 text-right">
+                      <p
+                        className="text-base font-black tabular-nums"
+                        style={{ color: isCredit ? "#34d399" : "#f87171" }}
+                      >
+                        {isCredit ? "+" : "-"}
+                        {formatCurrency(txn.amount)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

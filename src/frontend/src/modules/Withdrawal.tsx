@@ -67,6 +67,11 @@ export function Withdrawal({
   const [usdtAddress, setUsdtAddress] = useState("");
   const [usdtAmount, setUsdtAmount] = useState("");
 
+  // Transfer mode for bank
+  const [transferMode, setTransferMode] = useState<"IMPS" | "NEFT" | "RTGS">(
+    "IMPS",
+  );
+
   const approvedBanks: BankAccount[] = getBankAccounts().filter(
     (a) => a.userId === session?.userId && a.status === "approved",
   );
@@ -129,29 +134,50 @@ export function Withdrawal({
     // Build method-specific enrichment fields
     let extraFields: Record<string, string | number> = {};
     if (method === "upi") {
+      // Generate 12-digit numeric UTR for UPI
+      const upiUtr = String(Math.floor(Math.random() * 1e12)).padStart(12, "0");
       extraFields = {
-        transactionId: generateTransactionId("upi"),
-        referenceNumber: generateReferenceNumber("upi"),
+        transactionId: upiUtr,
+        referenceNumber: upiUtr,
+        utrNumber: upiUtr,
         upiVpa: details,
       };
     } else if (method === "bank") {
-      const isNeft = Math.random() < 0.5;
-      const mode = isNeft ? "NEFT" : "IMPS";
-      const txnId = isNeft
-        ? generateTransactionId("bank") // starts with NEFT...
-        : `IMPS${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}${String(Math.floor(Math.random() * 1e12)).padStart(12, "0")}`;
+      const ds = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
+      const bankCode = (selectedBank?.ifscCode ?? "HDFC")
+        .slice(0, 4)
+        .toUpperCase();
+      let txnId: string;
+      let refNum: string;
+      if (transferMode === "IMPS") {
+        txnId = `${String(Math.floor(Math.random() * 1e12)).padStart(12, "0")}`;
+        refNum = generateReferenceNumber("imps");
+      } else if (transferMode === "NEFT") {
+        txnId = `NEFT${ds}${bankCode}${String(Math.floor(Math.random() * 1e9)).padStart(9, "0")}`;
+        refNum = generateReferenceNumber("neft");
+      } else {
+        // RTGS
+        txnId = `RTGS${ds}${bankCode}${String(Math.floor(Math.random() * 1e9)).padStart(9, "0")}`;
+        refNum = generateReferenceNumber("neft");
+      }
       extraFields = {
         transactionId: txnId,
-        referenceNumber: generateReferenceNumber(isNeft ? "neft" : "imps"),
-        transferMode: mode,
+        referenceNumber: refNum,
+        transferMode,
+        utrNumber: generateUtrNumber(),
         bankBranch: getBranchNameFromIFSC(selectedBank?.ifscCode ?? ""),
-        ...(isNeft ? { utrNumber: generateUtrNumber() } : {}),
       };
     } else if (method === "usdt") {
+      // 1 USDT ≈ 83.5 INR conversion
+      const USDT_RATE = 83.5;
+      const usdtEquivalent =
+        Math.round((Number(amount) / USDT_RATE) * 100) / 100;
       extraFields = {
         transactionId: generateTransactionId("usdt"),
         txHash: generateUsdtTxHash(),
         networkFee: Math.round((0.5 + Math.random() * 2) * 100) / 100,
+        usdtEquivalent,
+        usdtRate: USDT_RATE,
       };
     }
 
@@ -310,6 +336,49 @@ export function Withdrawal({
 
             {/* Bank Tab */}
             <TabsContent value="bank" className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-sm">
+                  Transfer Mode <span className="text-destructive">*</span>
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    {
+                      value: "IMPS",
+                      limit: "Up to ₹5 Lakh",
+                      desc: "Instant 24x7",
+                    },
+                    {
+                      value: "NEFT",
+                      limit: "No Limit",
+                      desc: "Mon–Sat (Hourly)",
+                    },
+                    { value: "RTGS", limit: "Min ₹2 Lakh", desc: "High Value" },
+                  ].map((m) => (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() =>
+                        setTransferMode(m.value as "IMPS" | "NEFT" | "RTGS")
+                      }
+                      className={`p-2.5 rounded-lg border text-left transition-all ${
+                        transferMode === m.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-secondary hover:border-primary/40"
+                      }`}
+                    >
+                      <p className="text-xs font-bold text-foreground">
+                        {m.value}
+                      </p>
+                      <p className="text-[10px] text-primary mt-0.5">
+                        {m.limit}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {m.desc}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-muted-foreground text-sm">
                   Select Bank Account{" "}

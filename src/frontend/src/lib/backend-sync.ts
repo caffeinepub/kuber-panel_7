@@ -234,7 +234,18 @@ export async function initBackendSync(): Promise<void> {
         backendUsers.map(backendUserToLocal),
         localUsers,
       );
-      setUsers(merged);
+      // Preserve activatedFunds from local if backend doesn't have it (backend doesn't store per-fund activations)
+      const finalMerged = merged.map((m) => {
+        const local = localUsers.find((l) => l.id === m.id);
+        if (local?.activatedFunds && !m.activatedFunds) {
+          return { ...m, activatedFunds: local.activatedFunds };
+        }
+        return m;
+      });
+      // Filter out permanently deleted users
+      const { getDeletedUserIds } = await import("./storage");
+      const deletedUserIds = getDeletedUserIds();
+      setUsers(finalMerged.filter((u) => !deletedUserIds.includes(u.id)));
     }
 
     // Merge bank accounts (skip locally deleted ones)

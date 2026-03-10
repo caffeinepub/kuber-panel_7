@@ -67,20 +67,22 @@ function buildStatementRows(
       second: "2-digit",
       hour12: true,
     });
-    const utr = t.utr
-      ? t.utr
-      : t.id.replace(/-/g, "").slice(0, 12).toUpperCase();
+    const rawUtr = t.utr ?? t.id.replace(/-/g, "").slice(0, 12);
+    const utr = rawUtr
+      .replace(/[^0-9]/g, "")
+      .padStart(12, "0")
+      .slice(0, 12);
     const fundLabel = FUND_CONFIG[t.fundType as FundKey]?.label ?? t.fundType;
     const isCredit = t.type === "credit";
 
     const narration = isCredit
-      ? `${bankName} / NEFT-CR / ${fundLabel}`
-      : `${bankName} / NEFT-DR / ${fundLabel}`;
+      ? `${fundLabel} / ${bankName} / CR`
+      : `${fundLabel} / ${bankName} / DR`;
 
     if (isCredit) {
       balance += t.amount;
     } else {
-      balance -= t.amount;
+      balance = Math.max(0, balance - t.amount);
     }
 
     return {
@@ -121,7 +123,7 @@ function generateStatementHtml(
       <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #e8edf5">${r.date}</td>
       <td style="padding:8px 10px;font-size:11px;color:#555;border-bottom:1px solid #e8edf5">${r.time}</td>
       <td style="padding:8px 10px;font-size:12px;border-bottom:1px solid #e8edf5;max-width:260px">${r.narration}</td>
-      <td style="padding:8px 10px;font-size:11px;font-family:monospace;border-bottom:1px solid #e8edf5;color:#777">${r.utr}</td>
+      <td style="padding:8px 10px;font-size:11px;font-family:monospace;border-bottom:1px solid #e8edf5;color:#777;letter-spacing:0.1em">${r.utr}</td>
       <td style="padding:8px 10px;font-size:12px;text-align:right;color:#c0392b;font-weight:600;border-bottom:1px solid #e8edf5">${r.debit !== null ? fmtINR(r.debit) : "—"}</td>
       <td style="padding:8px 10px;font-size:12px;text-align:right;color:#27ae60;font-weight:600;border-bottom:1px solid #e8edf5">${r.credit !== null ? fmtINR(r.credit) : "—"}</td>
       <td style="padding:8px 10px;font-size:12px;text-align:right;font-weight:700;border-bottom:1px solid #e8edf5;color:${r.balance >= 0 ? "#1a1a1a" : "#c0392b"}">${fmtINR(r.balance)}</td>
@@ -137,28 +139,26 @@ function generateStatementHtml(
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Arial', sans-serif; background: #f4f6fa; color: #1a1a1a; }
-    .page { max-width: 900px; margin: 0 auto; background: #fff; }
-    .header { background: linear-gradient(135deg, #0d3b66, #1565c0); color: #fff; padding: 24px 32px; }
+    .page { max-width: 960px; margin: 0 auto; background: #fff; }
+    .header { background: linear-gradient(135deg, #0a2240, #1565c0); color: #fff; padding: 24px 32px; }
     .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
     .bank-name { font-size: 22px; font-weight: 900; letter-spacing: 2px; }
-    .bank-sub { font-size: 11px; opacity: 0.7; margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
-    .stmt-label { font-size: 11px; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; display: inline-block; }
+    .bank-sub { font-size: 11px; opacity: 0.6; margin-top: 3px; letter-spacing: 1px; text-transform: uppercase; }
+    .stmt-label { font-size: 10px; background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 20px; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; display: inline-block; }
     .acct-section { padding: 20px 32px; border-bottom: 2px solid #e8edf5; background: #f9fbff; }
     .acct-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
     .acct-item label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; display: block; margin-bottom: 3px; }
     .acct-item span { font-size: 13px; font-weight: 700; color: #1a1a1a; }
-    .period { padding: 12px 32px; background: #fff; border-bottom: 1px solid #e8edf5; display: flex; gap: 24px; font-size: 12px; }
+    .period { padding: 12px 32px; background: #fff; border-bottom: 1px solid #e8edf5; display: flex; gap: 24px; font-size: 12px; flex-wrap: wrap; }
     .period span { color: #555; } .period strong { color: #1a1a1a; }
     table { width: 100%; border-collapse: collapse; }
-    thead tr { background: #0d3b66; }
+    thead tr { background: #0a2240; }
     thead th { padding: 10px 10px; font-size: 11px; font-weight: 700; color: #fff; text-align: left; letter-spacing: 1px; text-transform: uppercase; }
     thead th:nth-child(5), thead th:nth-child(6), thead th:nth-child(7) { text-align: right; }
-    .summary { padding: 20px 32px; background: #f9fbff; border-top: 2px solid #0d3b66; display: flex; gap: 32px; flex-wrap: wrap; }
+    .summary { padding: 20px 32px; background: #f9fbff; border-top: 2px solid #0a2240; display: flex; gap: 32px; flex-wrap: wrap; }
     .summary-item label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #888; display: block; margin-bottom: 4px; }
     .summary-item span { font-size: 15px; font-weight: 800; }
-    .credit-total { color: #27ae60; }
-    .debit-total { color: #c0392b; }
-    .balance-total { color: #0d3b66; }
+    .credit-total { color: #27ae60; } .debit-total { color: #c0392b; } .balance-total { color: #0a2240; }
     .footer { padding: 14px 32px; text-align: center; font-size: 10px; color: #aaa; border-top: 1px solid #e8edf5; background: #fff; letter-spacing: 0.5px; }
     @media print { body { background: #fff; } .page { max-width: 100%; } }
   </style>
@@ -169,7 +169,7 @@ function generateStatementHtml(
     <div class="header-top">
       <div>
         <div class="bank-name">${session.bankName.toUpperCase()}</div>
-        <div class="bank-sub">Financial Services</div>
+        <div class="bank-sub">Account Statement</div>
       </div>
       <div style="text-align:right">
         <div class="stmt-label">Account Statement</div>
@@ -180,18 +180,9 @@ function generateStatementHtml(
 
   <div class="acct-section">
     <div class="acct-grid">
-      <div class="acct-item">
-        <label>Account Holder</label>
-        <span>${session.holderName}</span>
-      </div>
-      <div class="acct-item">
-        <label>Account Number</label>
-        <span style="font-family:monospace">${session.accountNumber}</span>
-      </div>
-      <div class="acct-item">
-        <label>IFSC Code</label>
-        <span style="font-family:monospace">${session.ifscCode}</span>
-      </div>
+      <div class="acct-item"><label>Account Holder</label><span>${session.holderName}</span></div>
+      <div class="acct-item"><label>Account Number</label><span style="font-family:monospace">${session.accountNumber}</span></div>
+      <div class="acct-item"><label>IFSC Code</label><span style="font-family:monospace">${session.ifscCode}</span></div>
     </div>
   </div>
 
@@ -204,37 +195,13 @@ function generateStatementHtml(
   ${
     rows.length === 0
       ? '<div style="text-align:center;padding:48px;color:#aaa;font-size:14px">No transactions in this period.</div>'
-      : `<table>
-    <thead>
-      <tr>
-        <th>Date</th>
-        <th>Time</th>
-        <th>Narration</th>
-        <th>UTR No.</th>
-        <th>Debit (DR)</th>
-        <th>Credit (CR)</th>
-        <th>Balance</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${rowsHtml}
-    </tbody>
-  </table>`
+      : `<table><thead><tr><th>Date</th><th>Time</th><th>Narration</th><th>Ref No.</th><th>Debit (DR)</th><th>Credit (CR)</th><th>Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table>`
   }
 
   <div class="summary">
-    <div class="summary-item">
-      <label>Total Credits (CR)</label>
-      <span class="credit-total">${fmtINR(totalCredit)}</span>
-    </div>
-    <div class="summary-item">
-      <label>Total Debits (DR)</label>
-      <span class="debit-total">${fmtINR(totalDebit)}</span>
-    </div>
-    <div class="summary-item">
-      <label>Closing Balance</label>
-      <span class="balance-total">${fmtINR(closingBalance)}</span>
-    </div>
+    <div class="summary-item"><label>Total Credits (CR)</label><span class="credit-total">${fmtINR(totalCredit)}</span></div>
+    <div class="summary-item"><label>Total Debits (DR)</label><span class="debit-total">${fmtINR(totalDebit)}</span></div>
+    <div class="summary-item"><label>Closing Balance</label><span class="balance-total">${fmtINR(closingBalance)}</span></div>
   </div>
 
   <div class="footer">
@@ -258,7 +225,6 @@ function SessionStatementDialog({
   const sessionTxns = allTxns.filter(
     (t) =>
       t.sessionId === session.id ||
-      // Fallback: transactions in time range + matching fund if no sessionId
       (session.transactionIds.length === 0 &&
         t.fundType === session.fundType &&
         new Date(t.timestamp).getTime() >=
@@ -300,6 +266,19 @@ function SessionStatementDialog({
     toast.success("Statement downloaded successfully.");
   };
 
+  const handlePrint = () => {
+    const html = generateStatementHtml(rows, session, periodStart, periodEnd);
+    const printWin = window.open("", "_blank");
+    if (printWin) {
+      printWin.document.write(html);
+      printWin.document.close();
+      printWin.focus();
+      setTimeout(() => {
+        printWin.print();
+      }, 500);
+    }
+  };
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
@@ -317,14 +296,14 @@ function SessionStatementDialog({
           {/* Bank header */}
           <div
             className="rounded-lg overflow-hidden"
-            style={{ background: "#0d3b66" }}
+            style={{ background: "linear-gradient(135deg, #0a2240, #1565c0)" }}
           >
             <div className="p-4 text-white">
               <p className="text-lg font-black tracking-widest">
                 {session.bankName.toUpperCase()}
               </p>
               <p className="text-xs opacity-60 tracking-widest uppercase mt-0.5">
-                Financial Services — Account Statement
+                Account Statement
               </p>
             </div>
           </div>
@@ -339,10 +318,7 @@ function SessionStatementDialog({
                 mono: true,
               },
               { label: "IFSC Code", value: session.ifscCode, mono: true },
-              {
-                label: "Period",
-                value: `${periodStart} — ${periodEnd}`,
-              },
+              { label: "Period", value: `${periodStart} — ${periodEnd}` },
             ].map(({ label, value, mono }) => (
               <div key={label} className="bg-secondary rounded-lg p-3">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">
@@ -363,8 +339,8 @@ function SessionStatementDialog({
               {FUND_CONFIG[session.fundType]?.label ?? session.fundType}
             </span>
             {session.endedAt ? (
-              <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full">
-                Session Closed
+              <span className="text-xs text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-full font-bold uppercase tracking-wider">
+                OFFLINE
               </span>
             ) : (
               <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full flex items-center gap-1">
@@ -413,12 +389,12 @@ function SessionStatementDialog({
               <div className="overflow-x-auto">
                 <table className="w-full text-xs border-collapse">
                   <thead>
-                    <tr style={{ background: "#0d3b66" }}>
+                    <tr style={{ background: "#0a2240" }}>
                       {[
                         "Date",
                         "Time",
                         "Narration",
-                        "UTR No.",
+                        "Ref No.",
                         "Debit (DR)",
                         "Credit (CR)",
                         "Balance",
@@ -446,10 +422,10 @@ function SessionStatementDialog({
                         <td className="px-3 py-2 text-muted-foreground whitespace-nowrap">
                           {row.time}
                         </td>
-                        <td className="px-3 py-2 font-mono max-w-[160px] truncate">
+                        <td className="px-3 py-2 max-w-[160px] truncate">
                           {row.narration}
                         </td>
-                        <td className="px-3 py-2 font-mono text-muted-foreground/70 whitespace-nowrap">
+                        <td className="px-3 py-2 font-mono text-muted-foreground/70 whitespace-nowrap tracking-widest">
                           {row.utr}
                         </td>
                         <td className="px-3 py-2 text-right text-red-400 font-bold tabular-nums whitespace-nowrap">
@@ -461,7 +437,11 @@ function SessionStatementDialog({
                             : "—"}
                         </td>
                         <td
-                          className={`px-3 py-2 text-right font-black tabular-nums whitespace-nowrap ${row.balance >= 0 ? "text-foreground" : "text-red-400"}`}
+                          className={`px-3 py-2 text-right font-black tabular-nums whitespace-nowrap ${
+                            row.balance >= 0
+                              ? "text-foreground"
+                              : "text-red-400"
+                          }`}
                         >
                           {formatCurrency(row.balance)}
                         </td>
@@ -473,14 +453,23 @@ function SessionStatementDialog({
             </div>
           )}
 
-          <div className="flex gap-2 pt-2 border-t border-border">
+          <div className="flex flex-wrap gap-2 pt-2 border-t border-border">
+            <Button
+              onClick={handlePrint}
+              variant="outline"
+              className="flex-1 border-primary/40 text-primary hover:bg-primary/10 gap-2"
+              data-ocid="account_statement.session_detail.print_button"
+            >
+              <FileText className="w-4 h-4" />
+              Print / Open
+            </Button>
             <Button
               onClick={handleDownload}
               className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 gap-2"
               data-ocid="account_statement.session_detail.download_button"
             >
               <Download className="w-4 h-4" />
-              Download Statement
+              Download
             </Button>
             <Button
               variant="outline"
@@ -504,27 +493,23 @@ export function AccountStatement({
   const [selectedSession, setSelectedSession] =
     useState<StatementSession | null>(null);
 
-  const allSessions = getStatementSessions()
-    .filter(() => {
-      // Show all sessions
-      return true;
-    })
-    .sort(
-      (a, b) =>
-        new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
-    );
-
-  // Keep only last 30 days
-  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-  const recentSessions = allSessions.filter(
-    (s) => new Date(s.startedAt).getTime() >= thirtyDaysAgo,
+  const allSessions = getStatementSessions().sort(
+    (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
   );
+
+  // Keep only last 30 days; only admin can see sessions
+  // Sessions remain for 30 days regardless of fund ON/OFF state
+  const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const recentSessions = isAdmin
+    ? allSessions.filter(
+        (s) => new Date(s.startedAt).getTime() >= thirtyDaysAgo,
+      )
+    : [];
 
   const allTxns = getLiveTransactions();
 
   function getSessionTxnCount(s: StatementSession): number {
     if (s.transactionIds.length > 0) return s.transactionIds.length;
-    // Fallback: count by time range + fund
     return allTxns.filter(
       (t) =>
         t.fundType === s.fundType &&
@@ -596,7 +581,15 @@ export function AccountStatement({
         </div>
 
         {/* Sessions List */}
-        {recentSessions.length === 0 ? (
+        {!isAdmin ? (
+          <div
+            className="bg-card border border-border rounded-xl text-center py-16 text-muted-foreground"
+            data-ocid="account_statement.empty_state"
+          >
+            <Lock className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p className="text-sm font-medium">No statements available.</p>
+          </div>
+        ) : recentSessions.length === 0 ? (
           <div
             className="bg-card border border-border rounded-xl text-center py-16 text-muted-foreground"
             data-ocid="account_statement.empty_state"
@@ -614,19 +607,11 @@ export function AccountStatement({
               const totals = getSessionTotals(s);
               const startDate = new Date(s.startedAt).toLocaleDateString(
                 "en-IN",
-                {
-                  day: "2-digit",
-                  month: "short",
-                  year: "numeric",
-                },
+                { day: "2-digit", month: "short", year: "numeric" },
               );
               const startTime = new Date(s.startedAt).toLocaleTimeString(
                 "en-IN",
-                {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                },
+                { hour: "2-digit", minute: "2-digit", hour12: true },
               );
               const endDate = s.endedAt
                 ? new Date(s.endedAt).toLocaleDateString("en-IN", {
@@ -652,12 +637,10 @@ export function AccountStatement({
                   data-ocid={`account_statement.item.${i + 1}`}
                 >
                   <div className="flex items-center gap-3">
-                    {/* Bank icon */}
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                       <Building2 className="w-5 h-5 text-primary" />
                     </div>
 
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold text-foreground">
@@ -672,7 +655,11 @@ export function AccountStatement({
                             "",
                           ) ?? s.fundType}
                         </span>
-                        {!s.endedAt && (
+                        {s.endedAt ? (
+                          <span className="text-xs text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                            OFFLINE
+                          </span>
+                        ) : (
                           <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded flex items-center gap-1">
                             <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                             Active
@@ -680,7 +667,6 @@ export function AccountStatement({
                         )}
                       </div>
 
-                      {/* Time range */}
                       <div className="flex items-center gap-1.5 mt-1.5 text-xs text-muted-foreground">
                         <Clock className="w-3 h-3" />
                         <span>
@@ -696,7 +682,6 @@ export function AccountStatement({
                         )}
                       </div>
 
-                      {/* Mini stats */}
                       <div className="flex items-center gap-4 mt-2">
                         <span className="text-xs text-muted-foreground/70">
                           {txnCount} transactions
@@ -716,7 +701,6 @@ export function AccountStatement({
                       </div>
                     </div>
 
-                    {/* Arrow */}
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40 group-hover:text-primary transition-colors flex-shrink-0" />
                   </div>
                 </button>
@@ -726,7 +710,6 @@ export function AccountStatement({
         )}
       </div>
 
-      {/* Session detail dialog */}
       {selectedSession && (
         <SessionStatementDialog
           session={selectedSession}
