@@ -91,6 +91,18 @@ export function LoginPage({
       if (local) user = { id: local.id, name: local.name, email: local.email };
     }
 
+    // Check if user was permanently deleted
+    const deletedEmails: string[] = JSON.parse(
+      localStorage.getItem("kuber_deletedEmails") ?? "[]",
+    );
+    if (deletedEmails.includes(email.toLowerCase())) {
+      toast.error(
+        "This account has been removed. Please register with a new account.",
+      );
+      setLoading(false);
+      return;
+    }
+
     if (!user) {
       toast.error("Invalid email or password.");
       setLoading(false);

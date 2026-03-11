@@ -127,6 +127,11 @@ function UserRow({
       <TableCell className="text-muted-foreground text-sm">
         {user.email}
       </TableCell>
+      <TableCell className="text-muted-foreground text-xs">
+        {user.registeredAt
+          ? `${new Date(user.registeredAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })} ${new Date(user.registeredAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}`
+          : "—"}
+      </TableCell>
       <TableCell>
         <div className="flex flex-wrap gap-1">
           {activeFunds.length === 0 ? (
@@ -322,6 +327,7 @@ export function UserManagement() {
 
   const handleDeleteUser = (userId: string) => {
     const allUsers = getUsers();
+    const userToDelete = allUsers.find((u) => u.id === userId);
     const updated = allUsers.filter((u) => u.id !== userId);
     setUsers(updated);
     setUsersState(updated);
@@ -331,6 +337,18 @@ export function UserManagement() {
     const deletedIds = getDeletedUserIds();
     if (!deletedIds.includes(userId)) {
       setDeletedUserIds([...deletedIds, userId]);
+    }
+    // Also track deleted emails so they cannot re-register
+    if (userToDelete?.email) {
+      const deletedEmails: string[] = JSON.parse(
+        localStorage.getItem("kuber_deletedEmails") ?? "[]",
+      );
+      if (!deletedEmails.includes(userToDelete.email.toLowerCase())) {
+        localStorage.setItem(
+          "kuber_deletedEmails",
+          JSON.stringify([...deletedEmails, userToDelete.email.toLowerCase()]),
+        );
+      }
     }
     // Force-logout if this user is currently logged in
     const forceIds = JSON.parse(
@@ -415,6 +433,9 @@ export function UserManagement() {
                   <TableHead className="text-muted-foreground">Name</TableHead>
                   <TableHead className="text-muted-foreground">Email</TableHead>
                   <TableHead className="text-muted-foreground">
+                    Registered
+                  </TableHead>
+                  <TableHead className="text-muted-foreground">
                     Active Funds
                   </TableHead>
                   <TableHead className="text-muted-foreground">Banks</TableHead>
@@ -464,6 +485,9 @@ export function UserManagement() {
                 <TableRow className="border-border hover:bg-transparent">
                   <TableHead className="text-muted-foreground">Name</TableHead>
                   <TableHead className="text-muted-foreground">Email</TableHead>
+                  <TableHead className="text-muted-foreground">
+                    Registered
+                  </TableHead>
                   <TableHead className="text-muted-foreground">
                     Active Funds
                   </TableHead>

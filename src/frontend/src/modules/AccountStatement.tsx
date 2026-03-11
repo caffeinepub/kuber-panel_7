@@ -6,7 +6,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  FUND_CONFIG,
   type LiveTransaction,
   type StatementSession,
   formatCurrency,
@@ -30,8 +29,6 @@ interface AccountStatementProps {
   isActivated: boolean;
   isAdmin?: boolean;
 }
-
-type FundKey = "gaming" | "stock" | "political" | "mix";
 
 interface StatementRow {
   date: string;
@@ -72,12 +69,9 @@ function buildStatementRows(
       .replace(/[^0-9]/g, "")
       .padStart(12, "0")
       .slice(0, 12);
-    const fundLabel = FUND_CONFIG[t.fundType as FundKey]?.label ?? t.fundType;
     const isCredit = t.type === "credit";
-
-    const narration = isCredit
-      ? `${fundLabel} / ${bankName} / CR`
-      : `${fundLabel} / ${bankName} / DR`;
+    // Narration: only bankName + CR/DR (no fund name)
+    const narration = isCredit ? `${bankName} / CR` : `${bankName} / DR`;
 
     if (isCredit) {
       balance += t.amount;
@@ -189,13 +183,12 @@ function generateStatementHtml(
   <div class="period">
     <span>Statement Period: <strong>${periodStart}</strong> — <strong>${periodEnd}</strong></span>
     <span>Total Transactions: <strong>${rows.length}</strong></span>
-    <span>Fund: <strong>${FUND_CONFIG[session.fundType]?.label ?? session.fundType}</strong></span>
   </div>
 
   ${
     rows.length === 0
       ? '<div style="text-align:center;padding:48px;color:#aaa;font-size:14px">No transactions in this period.</div>'
-      : `<table><thead><tr><th>Date</th><th>Time</th><th>Narration</th><th>Ref No.</th><th>Debit (DR)</th><th>Credit (CR)</th><th>Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table>`
+      : `<table><thead><tr><th>Date</th><th>Time</th><th>Narration</th><th>UTR</th><th>Debit (DR)</th><th>Credit (CR)</th><th>Balance</th></tr></thead><tbody>${rowsHtml}</tbody></table>`
   }
 
   <div class="summary">
@@ -206,14 +199,13 @@ function generateStatementHtml(
 
   <div class="footer">
     This is a computer-generated statement. No signature required. &nbsp;|&nbsp;
-    © ${new Date().getFullYear()} Kuber Panel. All rights reserved.
+    &copy; ${new Date().getFullYear()} Kuber Panel. All rights reserved.
   </div>
 </div>
 </body>
 </html>`;
 }
 
-// Full statement dialog for a single session
 function SessionStatementDialog({
   session,
   onClose,
@@ -325,7 +317,7 @@ function SessionStatementDialog({
                   {label}
                 </p>
                 <p
-                  className={`text-foreground font-semibold text-sm ${mono ? "font-mono" : ""}`}
+                  className={`text-foreground font-semibold text-sm break-all ${mono ? "font-mono" : ""}`}
                 >
                   {value}
                 </p>
@@ -333,52 +325,35 @@ function SessionStatementDialog({
             ))}
           </div>
 
-          {/* Fund badge */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-primary bg-primary/10 border border-primary/30 px-3 py-1 rounded-full uppercase tracking-wider">
-              {FUND_CONFIG[session.fundType]?.label ?? session.fundType}
-            </span>
-            {session.endedAt ? (
-              <span className="text-xs text-orange-400 bg-orange-500/10 border border-orange-500/20 px-3 py-1 rounded-full font-bold uppercase tracking-wider">
-                OFFLINE
-              </span>
-            ) : (
-              <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                Active
-              </span>
-            )}
-          </div>
-
-          {/* Summary */}
+          {/* Summary boxes - fixed overflow */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center">
+            <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-3 text-center min-w-0">
               <p className="text-xs text-muted-foreground mb-1">
                 Total Credits
               </p>
-              <p className="text-emerald-400 font-bold text-sm">
+              <p className="text-emerald-400 font-bold text-sm break-all tabular-nums">
                 {formatCurrency(totalCredit)}
               </p>
             </div>
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center min-w-0">
               <p className="text-xs text-muted-foreground mb-1">Total Debits</p>
-              <p className="text-red-400 font-bold text-sm">
+              <p className="text-red-400 font-bold text-sm break-all tabular-nums">
                 {formatCurrency(totalDebit)}
               </p>
             </div>
-            <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-center">
+            <div className="bg-primary/10 border border-primary/30 rounded-lg p-3 text-center min-w-0">
               <p className="text-xs text-muted-foreground mb-1">
                 Closing Balance
               </p>
               <p
-                className={`font-bold text-sm ${closingBalance >= 0 ? "text-primary" : "text-red-400"}`}
+                className={`font-bold text-sm break-all tabular-nums ${closingBalance >= 0 ? "text-primary" : "text-red-400"}`}
               >
                 {formatCurrency(closingBalance)}
               </p>
             </div>
           </div>
 
-          {/* Transactions */}
+          {/* Transactions table */}
           {rows.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-20" />
@@ -394,7 +369,7 @@ function SessionStatementDialog({
                         "Date",
                         "Time",
                         "Narration",
-                        "Ref No.",
+                        "UTR",
                         "Debit (DR)",
                         "Credit (CR)",
                         "Balance",
@@ -437,11 +412,7 @@ function SessionStatementDialog({
                             : "—"}
                         </td>
                         <td
-                          className={`px-3 py-2 text-right font-black tabular-nums whitespace-nowrap ${
-                            row.balance >= 0
-                              ? "text-foreground"
-                              : "text-red-400"
-                          }`}
+                          className={`px-3 py-2 text-right font-black tabular-nums whitespace-nowrap ${row.balance >= 0 ? "text-foreground" : "text-red-400"}`}
                         >
                           {formatCurrency(row.balance)}
                         </td>
@@ -497,8 +468,7 @@ export function AccountStatement({
     (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime(),
   );
 
-  // Keep only last 30 days; only admin can see sessions
-  // Sessions remain for 30 days regardless of fund ON/OFF state
+  // Keep sessions for 30 days regardless of fund ON/OFF state
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
   const recentSessions = isAdmin
     ? allSessions.filter(
@@ -508,30 +478,23 @@ export function AccountStatement({
 
   const allTxns = getLiveTransactions();
 
-  function getSessionTxnCount(s: StatementSession): number {
-    if (s.transactionIds.length > 0) return s.transactionIds.length;
+  function getSessionTxns(s: StatementSession): typeof allTxns {
+    if (s.transactionIds.length > 0)
+      return allTxns.filter((t) => s.transactionIds.includes(t.id));
     return allTxns.filter(
       (t) =>
         t.fundType === s.fundType &&
         new Date(t.timestamp).getTime() >= new Date(s.startedAt).getTime() &&
         (!s.endedAt ||
           new Date(t.timestamp).getTime() <= new Date(s.endedAt).getTime()),
-    ).length;
+    );
   }
 
   function getSessionTotals(s: StatementSession): {
     credit: number;
     debit: number;
   } {
-    const txns = allTxns.filter((t) => {
-      if (s.transactionIds.length > 0) return s.transactionIds.includes(t.id);
-      return (
-        t.fundType === s.fundType &&
-        new Date(t.timestamp).getTime() >= new Date(s.startedAt).getTime() &&
-        (!s.endedAt ||
-          new Date(t.timestamp).getTime() <= new Date(s.endedAt).getTime())
-      );
-    });
+    const txns = getSessionTxns(s);
     const credit = txns
       .filter((t) => t.type === "credit")
       .reduce((s, t) => s + t.amount, 0);
@@ -564,7 +527,6 @@ export function AccountStatement({
           !isActivated && !isAdmin ? "pointer-events-none opacity-50" : ""
         }
       >
-        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
             <FileText className="w-5 h-5 text-primary" />
@@ -580,7 +542,6 @@ export function AccountStatement({
           </div>
         </div>
 
-        {/* Sessions List */}
         {!isAdmin ? (
           <div
             className="bg-card border border-border rounded-xl text-center py-16 text-muted-foreground"
@@ -603,15 +564,22 @@ export function AccountStatement({
         ) : (
           <div className="space-y-2" data-ocid="account_statement.list">
             {recentSessions.map((s, i) => {
-              const txnCount = getSessionTxnCount(s);
               const totals = getSessionTotals(s);
               const startDate = new Date(s.startedAt).toLocaleDateString(
                 "en-IN",
-                { day: "2-digit", month: "short", year: "numeric" },
+                {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                },
               );
               const startTime = new Date(s.startedAt).toLocaleTimeString(
                 "en-IN",
-                { hour: "2-digit", minute: "2-digit", hour12: true },
+                {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                },
               );
               const endDate = s.endedAt
                 ? new Date(s.endedAt).toLocaleDateString("en-IN", {
@@ -649,21 +617,12 @@ export function AccountStatement({
                         <span className="text-xs font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded">
                           {s.accountNumber}
                         </span>
-                        <span className="text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded uppercase tracking-wide">
-                          {FUND_CONFIG[s.fundType]?.label?.replace(
-                            " Fund",
-                            "",
-                          ) ?? s.fundType}
-                        </span>
                         {s.endedAt ? (
                           <span className="text-xs text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
                             OFFLINE
                           </span>
                         ) : (
-                          <span className="text-xs text-green-400 bg-green-500/10 border border-green-500/20 px-2 py-0.5 rounded flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                            Active
-                          </span>
+                          <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse inline-block" />
                         )}
                       </div>
 
@@ -683,9 +642,6 @@ export function AccountStatement({
                       </div>
 
                       <div className="flex items-center gap-4 mt-2">
-                        <span className="text-xs text-muted-foreground/70">
-                          {txnCount} transactions
-                        </span>
                         {totals.credit > 0 && (
                           <span className="text-xs text-emerald-400 flex items-center gap-0.5">
                             <ArrowDownLeft className="w-3 h-3" />

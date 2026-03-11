@@ -96,6 +96,24 @@ export function LiveActivity({
 
   const getFundLabel = (type: FundKey) => FUND_CONFIG[type]?.label ?? type;
 
+  function fmtTxnDate(iso: string) {
+    const d = new Date(iso);
+    return d.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  }
+  function fmtTxnTime(iso: string) {
+    const d = new Date(iso);
+    return d.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+  }
+
   // User mode — always OFFLINE
   if (!isAdmin) {
     return (
@@ -116,7 +134,6 @@ export function LiveActivity({
           </div>
         )}
         <div className={!isActivated ? "pointer-events-none opacity-50" : ""}>
-          {/* Page title */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
@@ -139,7 +156,7 @@ export function LiveActivity({
             </div>
           </div>
 
-          {/* Account Details Box — OFFLINE */}
+          {/* Account Statement Box */}
           <div
             className="rounded-xl overflow-hidden border mb-3"
             style={{ borderColor: "#1a3050" }}
@@ -193,7 +210,7 @@ export function LiveActivity({
             </div>
           </div>
 
-          {/* Transactions box */}
+          {/* Live Fund Statement Box */}
           <div
             className="rounded-xl overflow-hidden border"
             style={{ borderColor: "#1a3050" }}
@@ -206,7 +223,7 @@ export function LiveActivity({
               }}
             >
               <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                Live Fund Activity
+                Live Fund Statement
               </span>
             </div>
             <div className="text-center py-14 bg-card">
@@ -224,7 +241,7 @@ export function LiveActivity({
     );
   }
 
-  // Admin mode — full live activity
+  // Admin mode
   const isLive = !!activeAccount;
 
   return (
@@ -282,12 +299,12 @@ export function LiveActivity({
           )}
         </div>
 
-        {/* ─── ACCOUNT STATEMENT BOX (account details) ─── */}
+        {/* ACCOUNT STATEMENT BOX (account details) */}
         <div
           className="rounded-xl overflow-hidden border mb-4"
           style={{ borderColor: isLive ? "#1d4a2e" : "#1a3050" }}
         >
-          {/* Header bar */}
+          {/* Header */}
           <div
             className="px-4 py-3 flex items-center justify-between"
             style={{
@@ -362,94 +379,95 @@ export function LiveActivity({
 
           {/* Account details grid */}
           <div
-            className="px-4 py-3 grid gap-3"
-            style={{
-              background: isLive ? "#081a10" : "#0a1e35",
-              gridTemplateColumns: "repeat(3,1fr)",
-            }}
+            className="px-4 py-3"
+            style={{ background: isLive ? "#081a10" : "#0a1e35" }}
           >
-            <div>
-              <p
-                className="text-[9px] uppercase tracking-widest mb-1"
-                style={{
-                  color: isLive
-                    ? "rgba(134,239,172,0.35)"
-                    : "rgba(255,255,255,0.3)",
-                }}
-              >
-                Account Holder
-              </p>
-              <p
-                className="text-xs font-bold"
-                style={{ color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)" }}
-              >
-                {activeAccount?.holderName ?? "——"}
-              </p>
-            </div>
-            <div>
-              <p
-                className="text-[9px] uppercase tracking-widest mb-1"
-                style={{
-                  color: isLive
-                    ? "rgba(134,239,172,0.35)"
-                    : "rgba(255,255,255,0.3)",
-                }}
-              >
-                Account No.
-              </p>
-              <p
-                className="text-xs font-mono font-bold"
-                style={{ color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)" }}
-              >
-                {activeAccount?.accountNumber ?? "——"}
-              </p>
-            </div>
-            <div>
-              <p
-                className="text-[9px] uppercase tracking-widest mb-1"
-                style={{
-                  color: isLive
-                    ? "rgba(134,239,172,0.35)"
-                    : "rgba(255,255,255,0.3)",
-                }}
-              >
-                IFSC Code
-              </p>
-              <p
-                className="text-xs font-mono font-bold"
-                style={{ color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)" }}
-              >
-                {activeAccount?.ifscCode ?? "——"}
-              </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div>
+                <p
+                  className="text-[9px] uppercase tracking-widest mb-1"
+                  style={{
+                    color: isLive
+                      ? "rgba(134,239,172,0.35)"
+                      : "rgba(255,255,255,0.3)",
+                  }}
+                >
+                  Account Holder
+                </p>
+                <p
+                  className="text-xs font-bold"
+                  style={{
+                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                  }}
+                >
+                  {activeAccount?.holderName ?? "——"}
+                </p>
+              </div>
+              <div>
+                <p
+                  className="text-[9px] uppercase tracking-widest mb-1"
+                  style={{
+                    color: isLive
+                      ? "rgba(134,239,172,0.35)"
+                      : "rgba(255,255,255,0.3)",
+                  }}
+                >
+                  Account No.
+                </p>
+                <p
+                  className="text-xs font-mono font-bold"
+                  style={{
+                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                  }}
+                >
+                  {activeAccount?.accountNumber ?? "——"}
+                </p>
+              </div>
+              <div>
+                <p
+                  className="text-[9px] uppercase tracking-widest mb-1"
+                  style={{
+                    color: isLive
+                      ? "rgba(134,239,172,0.35)"
+                      : "rgba(255,255,255,0.3)",
+                  }}
+                >
+                  IFSC Code
+                </p>
+                <p
+                  className="text-xs font-mono font-bold"
+                  style={{
+                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                  }}
+                >
+                  {activeAccount?.ifscCode ?? "——"}
+                </p>
+              </div>
+              <div>
+                <p
+                  className="text-[9px] uppercase tracking-widest mb-1"
+                  style={{
+                    color: isLive
+                      ? "rgba(134,239,172,0.35)"
+                      : "rgba(255,255,255,0.3)",
+                  }}
+                >
+                  Bank Name
+                </p>
+                <p
+                  className="text-xs font-bold"
+                  style={{
+                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                  }}
+                >
+                  {activeAccount?.bankName ?? "——"}
+                </p>
+              </div>
             </div>
           </div>
-
-          {/* Bank name footer strip */}
-          {isLive && activeAccount && (
-            <div
-              className="px-4 py-2 flex items-center gap-2"
-              style={{
-                background: "#061510",
-                borderTop: "1px solid rgba(52,211,153,0.1)",
-              }}
-            >
-              <span
-                className="text-[10px] font-black uppercase tracking-widest"
-                style={{ color: "rgba(134,239,172,0.5)" }}
-              >
-                Bank:
-              </span>
-              <span
-                className="text-[11px] font-black uppercase tracking-wider"
-                style={{ color: "#86efac" }}
-              >
-                {activeAccount.bankName}
-              </span>
-            </div>
-          )}
         </div>
 
-        {/* ─── LIVE FUND ACTIVITY TRANSACTIONS BOX ─── */}
+        {/* LIVE FUND STATEMENT TRANSACTIONS BOX */}
         <div
           className="rounded-xl overflow-hidden border"
           style={{ borderColor: isLive ? "#1d4a2e" : "#1a3050" }}
@@ -470,16 +488,10 @@ export function LiveActivity({
                   : "rgba(255,255,255,0.3)",
               }}
             >
-              Live Fund Activity
+              Live Fund Statement
             </span>
             {isLive && (
-              <span
-                className="text-[10px] font-semibold"
-                style={{ color: "rgba(134,239,172,0.4)" }}
-              >
-                {transactions.length} transaction
-                {transactions.length !== 1 ? "s" : ""}
-              </span>
+              <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
             )}
           </div>
 
@@ -491,7 +503,7 @@ export function LiveActivity({
                 No Active Account
               </p>
               <p className="text-xs text-muted-foreground/50 mt-1">
-                Turn ON a bank account in any Fund to start live transactions
+                No fund activity available
               </p>
             </div>
           ) : transactions.length === 0 ? (
@@ -502,7 +514,12 @@ export function LiveActivity({
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-white/5 max-h-[560px] overflow-y-auto bg-card">
+            <div
+              className="divide-y max-h-[600px] overflow-y-auto"
+              style={{
+                background: "#06111d",
+              }}
+            >
               {transactions.map((txn, i) => {
                 const isCredit = txn.type === "credit";
                 const rawUtr = txn.utr ?? txn.id.replace(/-/g, "").slice(0, 12);
@@ -510,61 +527,81 @@ export function LiveActivity({
                   .replace(/[^0-9]/g, "")
                   .padStart(12, "0")
                   .slice(0, 12);
+                const txnDate = fmtTxnDate(txn.timestamp);
+                const txnTime = fmtTxnTime(txn.timestamp);
 
                 return (
                   <div
                     key={txn.id}
-                    className={`flex items-center gap-0 hover:bg-secondary/20 transition-colors ${
+                    className={`flex items-stretch hover:opacity-90 transition-opacity ${
                       i === 0 ? "animate-slide-in" : ""
                     }`}
                     style={{
-                      borderLeft: `4px solid ${
-                        isCredit ? "#10b981" : "#ef4444"
-                      }`,
+                      borderLeft: `3px solid ${isCredit ? "#10b981" : "#ef4444"}`,
+                      borderBottom: "1px solid rgba(255,255,255,0.04)",
                     }}
                   >
-                    {/* Left: CR/DR badge + labels */}
-                    <div className="flex-1 flex items-center gap-3 px-4 py-3.5 min-w-0">
-                      {/* Badge */}
+                    {/* CR/DR Badge */}
+                    <div
+                      className="flex items-center justify-center px-3 flex-shrink-0"
+                      style={{
+                        background: isCredit
+                          ? "rgba(16,185,129,0.08)"
+                          : "rgba(239,68,68,0.08)",
+                      }}
+                    >
                       <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 font-black text-xs tracking-widest"
+                        className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-[11px] tracking-widest"
                         style={{
                           background: isCredit
-                            ? "rgba(16,185,129,0.12)"
-                            : "rgba(239,68,68,0.12)",
-                          border: `1px solid ${
-                            isCredit
-                              ? "rgba(16,185,129,0.3)"
-                              : "rgba(239,68,68,0.3)"
-                          }`,
+                            ? "rgba(16,185,129,0.15)"
+                            : "rgba(239,68,68,0.15)",
+                          border: `1px solid ${isCredit ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)"}`,
                           color: isCredit ? "#34d399" : "#f87171",
                         }}
                       >
                         {isCredit ? "CR" : "DR"}
                       </div>
+                    </div>
 
-                      {/* Text */}
-                      <div className="min-w-0">
-                        <p
-                          className="text-sm font-black uppercase tracking-wide"
-                          style={{ color: isCredit ? "#34d399" : "#f87171" }}
+                    {/* Transaction Info */}
+                    <div className="flex-1 px-3 py-3 min-w-0">
+                      <p
+                        className="text-[13px] font-black uppercase tracking-wide"
+                        style={{ color: isCredit ? "#34d399" : "#f87171" }}
+                      >
+                        {isCredit ? "AMOUNT CREDITED" : "AMOUNT DEBITED"}
+                      </p>
+                      <p
+                        className="text-[11px] font-mono mt-0.5 tracking-widest"
+                        style={{ color: "rgba(255,255,255,0.3)" }}
+                      >
+                        UTR {utr12}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span
+                          className="text-[10px]"
+                          style={{ color: "rgba(255,255,255,0.25)" }}
                         >
-                          {isCredit ? "AMOUNT CREDITED" : "AMOUNT DEBITED"}
-                        </p>
-                        <p
-                          className="text-[11px] font-mono mt-0.5"
-                          style={{
-                            color: "rgba(255,255,255,0.35)",
-                            letterSpacing: "0.1em",
-                          }}
+                          {txnDate}
+                        </span>
+                        <span
+                          className="text-[10px]"
+                          style={{ color: "rgba(255,255,255,0.15)" }}
                         >
-                          UTR {utr12}
-                        </p>
+                          |
+                        </span>
+                        <span
+                          className="text-[10px]"
+                          style={{ color: "rgba(255,255,255,0.25)" }}
+                        >
+                          {txnTime}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Right: Amount */}
-                    <div className="pr-4 flex-shrink-0 text-right">
+                    {/* Amount */}
+                    <div className="pr-4 flex items-center flex-shrink-0">
                       <p
                         className="text-base font-black tabular-nums"
                         style={{ color: isCredit ? "#34d399" : "#f87171" }}

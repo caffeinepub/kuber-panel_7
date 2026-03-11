@@ -30,6 +30,8 @@ import { ArrowDownToLine, Loader2, Lock } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+const USDT_RATE = 83.5; // 1 USDT = INR 83.5
+
 interface WithdrawalProps {
   isActivated: boolean;
   isUserMode?: boolean;
@@ -42,7 +44,6 @@ export function Withdrawal({
   const session = getSession();
   const [loading, setLoading] = useState(false);
 
-  // In user mode, get net commission balance
   const getUserCommissionBalance = () => {
     if (!session) return 0;
     const acc = getAccumulatedCommission();
@@ -55,19 +56,12 @@ export function Withdrawal({
     return Math.max(0, acc.total - withdrawn);
   };
 
-  // UPI
   const [upiId, setUpiId] = useState("");
   const [upiAmount, setUpiAmount] = useState("");
-
-  // Bank
   const [selectedBankId, setSelectedBankId] = useState("");
   const [bankAmount, setBankAmount] = useState("");
-
-  // USDT
   const [usdtAddress, setUsdtAddress] = useState("");
-  const [usdtAmount, setUsdtAmount] = useState("");
-
-  // Transfer mode for bank
+  const [usdtInrAmount, setUsdtInrAmount] = useState(""); // user enters INR amount
   const [transferMode, setTransferMode] = useState<"IMPS" | "NEFT" | "RTGS">(
     "IMPS",
   );
@@ -75,8 +69,12 @@ export function Withdrawal({
   const approvedBanks: BankAccount[] = getBankAccounts().filter(
     (a) => a.userId === session?.userId && a.status === "approved",
   );
-
   const selectedBank = approvedBanks.find((b) => b.id === selectedBankId);
+
+  // Derived: USDT equivalent from INR amount
+  const usdtEquivalentDisplay = usdtInrAmount
+    ? (Number(usdtInrAmount) / USDT_RATE).toFixed(4)
+    : "";
 
   const handleSubmit = async (
     method: "upi" | "bank" | "usdt",
@@ -91,24 +89,17 @@ export function Withdrawal({
       toast.error("Please fill in all required fields.");
       return;
     }
-    // In user mode: block withdrawal if no commission balance
     if (isUserMode) {
       const balance = getUserCommissionBalance();
       if (balance <= 0) {
-        toast.error(
-          "Insufficient commission balance. You cannot withdraw without commission earnings.",
-        );
+        toast.error("Insufficient commission balance.");
         return;
       }
       if (Number(amount) > balance) {
-        toast.error(
-          `Withdrawal amount exceeds your commission balance of ₹${balance.toFixed(2)}.`,
-        );
+        toast.error("Withdrawal amount exceeds your commission balance.");
         return;
       }
     }
-
-    // Admin mode: check accumulated commission balance
     if (!isUserMode) {
       const acc = getAccumulatedCommission();
       const alreadyWithdrawn = getWithdrawals()
@@ -130,11 +121,9 @@ export function Withdrawal({
     await new Promise((r) => setTimeout(r, 600));
 
     const now = new Date();
-
-    // Build method-specific enrichment fields
     let extraFields: Record<string, string | number> = {};
+
     if (method === "upi") {
-      // Generate 12-digit numeric UTR for UPI
       const upiUtr = String(Math.floor(Math.random() * 1e12)).padStart(12, "0");
       extraFields = {
         transactionId: upiUtr,
@@ -150,28 +139,27 @@ export function Withdrawal({
       let txnId: string;
       let refNum: string;
       if (transferMode === "IMPS") {
-        txnId = `${String(Math.floor(Math.random() * 1e12)).padStart(12, "0")}`;
+        txnId = String(Math.floor(Math.random() * 1e12)).padStart(12, "0");
         refNum = generateReferenceNumber("imps");
       } else if (transferMode === "NEFT") {
         txnId = `NEFT${ds}${bankCode}${String(Math.floor(Math.random() * 1e9)).padStart(9, "0")}`;
         refNum = generateReferenceNumber("neft");
       } else {
-        // RTGS
         txnId = `RTGS${ds}${bankCode}${String(Math.floor(Math.random() * 1e9)).padStart(9, "0")}`;
         refNum = generateReferenceNumber("neft");
       }
+      const branchCity = getBranchNameFromIFSC(selectedBank?.ifscCode ?? "");
       extraFields = {
         transactionId: txnId,
         referenceNumber: refNum,
         transferMode,
         utrNumber: generateUtrNumber(),
-        bankBranch: getBranchNameFromIFSC(selectedBank?.ifscCode ?? ""),
+        bankBranch: branchCity,
+        branchCity,
       };
     } else if (method === "usdt") {
-      // 1 USDT ≈ 83.5 INR conversion
-      const USDT_RATE = 83.5;
       const usdtEquivalent =
-        Math.round((Number(amount) / USDT_RATE) * 100) / 100;
+        Math.round((Number(amount) / USDT_RATE) * 10000) / 10000;
       extraFields = {
         transactionId: generateTransactionId("usdt"),
         txHash: generateUsdtTxHash(),
@@ -203,10 +191,8 @@ export function Withdrawal({
     };
 
     const withdrawal = { ...baseWithdrawal, ...extraFields };
-
     syncAddWithdrawal(withdrawal);
 
-    // Auto-deduct from accumulated commission (admin only)
     if (!isUserMode) {
       const acc = getAccumulatedCommission();
       const newTotal = Math.max(0, acc.total - Number(amount));
@@ -216,7 +202,6 @@ export function Withdrawal({
     toast.success("Withdrawal successful! Status: Transfer Successful");
     setLoading(false);
 
-    // Reset
     if (method === "upi") {
       setUpiId("");
       setUpiAmount("");
@@ -227,26 +212,21 @@ export function Withdrawal({
     }
     if (method === "usdt") {
       setUsdtAddress("");
-      setUsdtAmount("");
+      setUsdtInrAmount("");
     }
   };
 
-  const amountInput = (
-    val: string,
-    setter: (v: string) => void,
-    isUsdt = false,
-  ) => (
+  const inrAmountInput = (val: string, setter: (v: string) => void) => (
     <div className="space-y-1.5">
       <Label className="text-muted-foreground text-sm">
-        {isUsdt ? "Amount (USDT)" : "Amount (₹)"}{" "}
-        <span className="text-destructive">*</span>
+        Amount (₹) <span className="text-destructive">*</span>
       </Label>
       <Input
         type="number"
         value={val}
         onChange={(e) => setter(e.target.value)}
-        placeholder={isUsdt ? "Enter USDT amount" : "Enter withdrawal amount"}
-        min={isUsdt ? "1" : "100"}
+        placeholder="Enter withdrawal amount"
+        min="100"
         className="bg-secondary border-border focus:border-primary h-11 text-foreground placeholder:text-muted-foreground/50"
       />
     </div>
@@ -321,7 +301,7 @@ export function Withdrawal({
                   className="bg-secondary border-border focus:border-primary h-11 text-foreground placeholder:text-muted-foreground/50"
                 />
               </div>
-              {amountInput(upiAmount, setUpiAmount)}
+              {inrAmountInput(upiAmount, setUpiAmount)}
               <Button
                 onClick={() => handleSubmit("upi", upiAmount, upiId)}
                 disabled={loading}
@@ -406,7 +386,23 @@ export function Withdrawal({
                   </SelectContent>
                 </Select>
               </div>
-              {amountInput(bankAmount, setBankAmount)}
+              {selectedBank && (
+                <div className="p-3 bg-secondary/50 border border-border rounded-lg text-xs space-y-1">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Branch / City</span>
+                    <span className="font-semibold text-foreground">
+                      {getBranchNameFromIFSC(selectedBank.ifscCode)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">IFSC</span>
+                    <span className="font-mono text-foreground">
+                      {selectedBank.ifscCode}
+                    </span>
+                  </div>
+                </div>
+              )}
+              {inrAmountInput(bankAmount, setBankAmount)}
               <Button
                 onClick={() =>
                   handleSubmit(
@@ -439,7 +435,35 @@ export function Withdrawal({
                   className="bg-secondary border-border focus:border-primary h-11 text-foreground font-mono text-sm placeholder:text-muted-foreground/50"
                 />
               </div>
-              {amountInput(usdtAmount, setUsdtAmount, true)}
+
+              <div className="space-y-1.5">
+                <Label className="text-muted-foreground text-sm">
+                  Amount (₹ INR) <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  type="number"
+                  value={usdtInrAmount}
+                  onChange={(e) => setUsdtInrAmount(e.target.value)}
+                  placeholder="Enter amount in INR"
+                  min="100"
+                  className="bg-secondary border-border focus:border-primary h-11 text-foreground placeholder:text-muted-foreground/50"
+                />
+                {usdtInrAmount && Number(usdtInrAmount) > 0 && (
+                  <div className="flex items-center justify-between px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                    <span className="text-xs text-muted-foreground">
+                      ₹{Number(usdtInrAmount).toLocaleString("en-IN")} INR
+                    </span>
+                    <span className="text-xs font-bold text-amber-400">=</span>
+                    <span className="text-sm font-black text-amber-300">
+                      ₮ {usdtEquivalentDisplay} USDT
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/50">
+                      @ ₹{USDT_RATE}/USDT
+                    </span>
+                  </div>
+                )}
+              </div>
+
               <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
                 <p className="text-warning text-xs">
                   Only TRC20 network is supported. Double-check your wallet
@@ -447,7 +471,7 @@ export function Withdrawal({
                 </p>
               </div>
               <Button
-                onClick={() => handleSubmit("usdt", usdtAmount, usdtAddress)}
+                onClick={() => handleSubmit("usdt", usdtInrAmount, usdtAddress)}
                 disabled={loading}
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90 h-11 font-semibold"
               >

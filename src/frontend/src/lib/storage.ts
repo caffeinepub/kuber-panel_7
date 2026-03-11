@@ -9,6 +9,7 @@ export interface User {
   password: string;
   isActivated: boolean;
   activationCode?: string;
+  registeredAt?: string;
   activatedFunds?: {
     gaming?: boolean;
     stock?: boolean;
