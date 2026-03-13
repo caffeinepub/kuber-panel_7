@@ -67,31 +67,7 @@ export function LoginPage({
       return;
     }
 
-    // User check — try backend first, fall back to localStorage
-    let user: { id: string; name: string; email: string } | null = null;
-    try {
-      const actor = await createActorWithConfig();
-      const backendUser = await actor.loginUser(email, password);
-      if (backendUser) {
-        user = {
-          id: backendUser.id,
-          name: backendUser.name,
-          email: backendUser.email,
-        };
-      }
-    } catch {
-      // Backend unavailable — fall back to localStorage
-      const { getUsers } = await import("@/lib/storage");
-      const users = getUsers();
-      const local = users.find(
-        (u) =>
-          u.email.toLowerCase() === email.toLowerCase() &&
-          u.password === password,
-      );
-      if (local) user = { id: local.id, name: local.name, email: local.email };
-    }
-
-    // Check if user was permanently deleted
+    // Check if user was permanently deleted first
     const deletedEmails: string[] = JSON.parse(
       localStorage.getItem("kuber_deletedEmails") ?? "[]",
     );
@@ -101,6 +77,37 @@ export function LoginPage({
       );
       setLoading(false);
       return;
+    }
+
+    // User check — try backend first, fall back to localStorage
+    let user: { id: string; name: string; email: string } | null = null;
+    try {
+      const actor = await createActorWithConfig();
+      const result = await (actor as any).loginUser(email, password);
+      if (result && typeof result === "object") {
+        const backendUser = Array.isArray(result) ? result[0] : result;
+        if (backendUser?.id) {
+          user = {
+            id: backendUser.id,
+            name: backendUser.name,
+            email: backendUser.email,
+          };
+        }
+      }
+    } catch {
+      // fall through to localStorage
+    }
+
+    // Always also check localStorage (in case backend is empty but local has data)
+    if (!user) {
+      const { getUsers } = await import("@/lib/storage");
+      const users = getUsers();
+      const local = users.find(
+        (u) =>
+          u.email.toLowerCase() === email.toLowerCase() &&
+          u.password === password,
+      );
+      if (local) user = { id: local.id, name: local.name, email: local.email };
     }
 
     if (!user) {

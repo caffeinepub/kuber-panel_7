@@ -29,21 +29,146 @@ import { Building2, Eye, Lock, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+function AccountTable({
+  accounts,
+  onView,
+  onEdit,
+  onDeleteConfirm,
+}: {
+  accounts: BankAccount[];
+  onView: (acc: BankAccount) => void;
+  onEdit: (acc: BankAccount) => void;
+  onDeleteConfirm: (id: string) => void;
+}) {
+  if (accounts.length === 0) {
+    return (
+      <div
+        className="text-center py-10 text-muted-foreground"
+        data-ocid="bank.empty_state"
+      >
+        <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+        <p className="text-sm">No bank accounts submitted yet.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="overflow-x-auto">
+      <Table data-ocid="bank.table">
+        <TableHeader>
+          <TableRow className="border-border hover:bg-transparent">
+            <TableHead className="text-muted-foreground">Bank Name</TableHead>
+            <TableHead className="text-muted-foreground">Account No.</TableHead>
+            <TableHead className="text-muted-foreground">Holder</TableHead>
+            <TableHead className="text-muted-foreground">IFSC</TableHead>
+            <TableHead className="text-muted-foreground">Status</TableHead>
+            <TableHead className="text-muted-foreground">Date</TableHead>
+            <TableHead className="text-muted-foreground">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {accounts.map((acc, idx) => (
+            <TableRow
+              key={acc.id}
+              className="border-border hover:bg-secondary/50 cursor-pointer"
+              onClick={() => onView(acc)}
+              data-ocid={`bank.item.${idx + 1}`}
+            >
+              <TableCell className="font-medium text-foreground">
+                <div className="flex items-center gap-2">
+                  {acc.bankName}
+                  {acc.qrCode && (
+                    <img
+                      src={acc.qrCode}
+                      alt="QR"
+                      className="w-8 h-8 rounded object-contain border border-border bg-secondary shrink-0"
+                      title="Bank QR Code"
+                    />
+                  )}
+                </div>
+              </TableCell>
+              <TableCell className="text-muted-foreground font-mono text-sm tracking-wider">
+                {acc.accountNumber}
+              </TableCell>
+              <TableCell className="text-muted-foreground text-sm">
+                {acc.holderName}
+              </TableCell>
+              <TableCell className="text-muted-foreground font-mono text-sm">
+                {acc.ifscCode}
+              </TableCell>
+              <TableCell>
+                <StatusBadge status={acc.status} />
+              </TableCell>
+              <TableCell className="text-muted-foreground text-sm">
+                {formatDate(acc.submittedAt)}
+              </TableCell>
+              <TableCell>
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper div */}
+                <div
+                  className="flex items-center gap-1.5"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onView(acc)}
+                    className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                    data-ocid={`bank.view_button.${idx + 1}`}
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                  </Button>
+                  {acc.status === "pending" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onEdit(acc)}
+                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                      data-ocid={`bank.edit_button.${idx + 1}`}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onDeleteConfirm(acc.id)}
+                    className="h-7 w-7 p-0 text-destructive hover:text-destructive/80"
+                    data-ocid={`bank.delete_button.${idx + 1}`}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}
+
 export function AddBankAccount({
   isActivated = true,
 }: { isActivated?: boolean }) {
   const session = getSession();
-  const [refreshKey, setRefreshKey] = useState(0);
   const [editAccount, setEditAccount] = useState<BankAccount | null>(null);
   const [editForm, setEditForm] = useState<Partial<BankAccount>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [viewAccount, setViewAccount] = useState<BankAccount | null>(null);
-
-  const userAccounts = getBankAccounts().filter(
-    (a) => a.userId === session?.userId && a.fundType === "general",
+  const [userAccounts, setUserAccounts] = useState<BankAccount[]>(() =>
+    getBankAccounts().filter(
+      (a) => a.userId === session?.userId && a.fundType === "general",
+    ),
   );
 
-  const handleSuccess = () => setRefreshKey((k) => k + 1);
+  const refreshAccounts = () => {
+    setUserAccounts(
+      getBankAccounts().filter(
+        (a) => a.userId === session?.userId && a.fundType === "general",
+      ),
+    );
+  };
+
+  const handleSuccess = () => refreshAccounts();
 
   const handleEdit = (acc: BankAccount) => {
     setEditAccount(acc);
@@ -66,124 +191,15 @@ export function AddBankAccount({
     );
     setBankAccounts(updated);
     setEditAccount(null);
-    setRefreshKey((k) => k + 1);
+    refreshAccounts();
     toast.success("Bank account updated.");
   };
 
   const handleDelete = (id: string) => {
     syncDeleteBankAccount(id);
     setDeleteConfirm(null);
-    setRefreshKey((k) => k + 1);
+    refreshAccounts();
     toast.success("Bank account deleted.");
-  };
-
-  const AccountTable = ({ accounts }: { accounts: BankAccount[] }) => {
-    if (accounts.length === 0) {
-      return (
-        <div
-          className="text-center py-10 text-muted-foreground"
-          data-ocid="bank.empty_state"
-        >
-          <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">No bank accounts submitted yet.</p>
-        </div>
-      );
-    }
-    return (
-      <div className="overflow-x-auto">
-        <Table data-ocid="bank.table">
-          <TableHeader>
-            <TableRow className="border-border hover:bg-transparent">
-              <TableHead className="text-muted-foreground">Bank Name</TableHead>
-              <TableHead className="text-muted-foreground">
-                Account No.
-              </TableHead>
-              <TableHead className="text-muted-foreground">Holder</TableHead>
-              <TableHead className="text-muted-foreground">IFSC</TableHead>
-              <TableHead className="text-muted-foreground">Status</TableHead>
-              <TableHead className="text-muted-foreground">Date</TableHead>
-              <TableHead className="text-muted-foreground">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {accounts.map((acc, idx) => (
-              <TableRow
-                key={acc.id}
-                className="border-border hover:bg-secondary/50 cursor-pointer"
-                onClick={() => setViewAccount(acc)}
-                data-ocid={`bank.item.${idx + 1}`}
-              >
-                <TableCell className="font-medium text-foreground">
-                  <div className="flex items-center gap-2">
-                    {acc.bankName}
-                    {acc.qrCode && (
-                      <img
-                        src={acc.qrCode}
-                        alt="QR"
-                        className="w-8 h-8 rounded object-contain border border-border bg-secondary shrink-0"
-                        title="Bank QR Code"
-                      />
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-sm tracking-wider">
-                  {acc.accountNumber}
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {acc.holderName}
-                </TableCell>
-                <TableCell className="text-muted-foreground font-mono text-sm">
-                  {acc.ifscCode}
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={acc.status} />
-                </TableCell>
-                <TableCell className="text-muted-foreground text-sm">
-                  {formatDate(acc.submittedAt)}
-                </TableCell>
-                <TableCell>
-                  {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation wrapper div */}
-                  <div
-                    className="flex items-center gap-1.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setViewAccount(acc)}
-                      className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                      data-ocid={`bank.view_button.${idx + 1}`}
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </Button>
-                    {acc.status === "pending" && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(acc)}
-                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
-                        data-ocid={`bank.edit_button.${idx + 1}`}
-                      >
-                        <Pencil className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteConfirm(acc.id)}
-                      className="h-7 w-7 p-0 text-destructive hover:text-destructive/80"
-                      data-ocid={`bank.delete_button.${idx + 1}`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-    );
   };
 
   if (!isActivated) {
@@ -238,7 +254,12 @@ export function AddBankAccount({
             fund.
           </p>
         </div>
-        <AccountTable accounts={userAccounts} key={refreshKey} />
+        <AccountTable
+          accounts={userAccounts}
+          onView={setViewAccount}
+          onEdit={handleEdit}
+          onDeleteConfirm={setDeleteConfirm}
+        />
       </div>
 
       {/* Edit Dialog */}

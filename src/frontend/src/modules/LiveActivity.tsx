@@ -302,14 +302,14 @@ export function LiveActivity({
         {/* ACCOUNT STATEMENT BOX (account details) */}
         <div
           className="rounded-xl overflow-hidden border mb-4"
-          style={{ borderColor: isLive ? "#1d4a2e" : "#1a3050" }}
+          style={{ borderColor: isLive ? "#1a3a6b" : "#1a3050" }}
         >
           {/* Header */}
           <div
             className="px-4 py-3 flex items-center justify-between"
             style={{
               background: isLive
-                ? "linear-gradient(135deg, #061c10 0%, #0a2e18 60%, #061c10 100%)"
+                ? "linear-gradient(135deg, #07112a 0%, #0d1f3d 60%, #07112a 100%)"
                 : "linear-gradient(135deg, #07192e 0%, #0b2545 60%, #07192e 100%)",
               borderBottom: "1px solid rgba(255,255,255,0.07)",
             }}
@@ -319,17 +319,17 @@ export function LiveActivity({
                 className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{
                   background: isLive
-                    ? "rgba(52,211,153,0.12)"
+                    ? "rgba(99,179,237,0.12)"
                     : "rgba(255,255,255,0.07)",
                   border: isLive
-                    ? "1px solid rgba(52,211,153,0.25)"
+                    ? "1px solid rgba(99,179,237,0.25)"
                     : "1px solid rgba(255,255,255,0.1)",
                 }}
               >
                 <span
                   className="font-black text-sm"
                   style={{
-                    color: isLive ? "#34d399" : "rgba(255,255,255,0.6)",
+                    color: isLive ? "#93c5fd" : "rgba(255,255,255,0.6)",
                   }}
                 >
                   ₹
@@ -339,7 +339,7 @@ export function LiveActivity({
                 <p
                   className="text-xs font-black uppercase tracking-widest"
                   style={{
-                    color: isLive ? "#86efac" : "rgba(255,255,255,0.7)",
+                    color: isLive ? "#c8d8ff" : "rgba(255,255,255,0.7)",
                   }}
                 >
                   Account Statement
@@ -380,7 +380,7 @@ export function LiveActivity({
           {/* Account details grid */}
           <div
             className="px-4 py-3"
-            style={{ background: isLive ? "#081a10" : "#0a1e35" }}
+            style={{ background: isLive ? "#080f20" : "#0a1e35" }}
           >
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
@@ -397,7 +397,7 @@ export function LiveActivity({
                 <p
                   className="text-xs font-bold"
                   style={{
-                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                    color: isLive ? "#c8d8ff" : "rgba(255,255,255,0.4)",
                   }}
                 >
                   {activeAccount?.holderName ?? "——"}
@@ -417,7 +417,7 @@ export function LiveActivity({
                 <p
                   className="text-xs font-mono font-bold"
                   style={{
-                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                    color: isLive ? "#c8d8ff" : "rgba(255,255,255,0.4)",
                   }}
                 >
                   {activeAccount?.accountNumber ?? "——"}
@@ -437,7 +437,7 @@ export function LiveActivity({
                 <p
                   className="text-xs font-mono font-bold"
                   style={{
-                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                    color: isLive ? "#c8d8ff" : "rgba(255,255,255,0.4)",
                   }}
                 >
                   {activeAccount?.ifscCode ?? "——"}
@@ -457,7 +457,7 @@ export function LiveActivity({
                 <p
                   className="text-xs font-bold"
                   style={{
-                    color: isLive ? "#d1fae5" : "rgba(255,255,255,0.4)",
+                    color: isLive ? "#c8d8ff" : "rgba(255,255,255,0.4)",
                   }}
                 >
                   {activeAccount?.bankName ?? "——"}
@@ -470,13 +470,13 @@ export function LiveActivity({
         {/* LIVE FUND STATEMENT TRANSACTIONS BOX */}
         <div
           className="rounded-xl overflow-hidden border"
-          style={{ borderColor: isLive ? "#1d4a2e" : "#1a3050" }}
+          style={{ borderColor: isLive ? "#1a3a6b" : "#1a3050" }}
         >
           {/* Box header */}
           <div
             className="px-4 py-2.5 flex items-center justify-between"
             style={{
-              background: isLive ? "#0a2518" : "#0d2035",
+              background: isLive ? "#0a1530" : "#0d2035",
               borderBottom: "1px solid rgba(255,255,255,0.05)",
             }}
           >
@@ -484,7 +484,7 @@ export function LiveActivity({
               className="text-[10px] font-bold uppercase tracking-widest"
               style={{
                 color: isLive
-                  ? "rgba(134,239,172,0.5)"
+                  ? "rgba(148,187,255,0.5)"
                   : "rgba(255,255,255,0.3)",
               }}
             >
@@ -510,7 +510,7 @@ export function LiveActivity({
             <div className="text-center py-14 bg-card">
               <Activity className="w-10 h-10 mx-auto mb-3 opacity-15" />
               <p className="text-sm text-muted-foreground font-medium">
-                Waiting for transactions...
+                No transactions yet
               </p>
             </div>
           ) : (
@@ -533,83 +533,40 @@ export function LiveActivity({
                 return (
                   <div
                     key={txn.id}
-                    className={`flex items-stretch hover:opacity-90 transition-opacity ${
-                      i === 0 ? "animate-slide-in" : ""
-                    }`}
+                    className={`px-4 py-3 flex items-center gap-3 ${i === 0 ? "animate-slide-in" : ""}`}
                     style={{
-                      borderLeft: `3px solid ${isCredit ? "#10b981" : "#ef4444"}`,
+                      borderLeft: `4px solid ${isCredit ? "#22c55e" : "#ef4444"}`,
                       borderBottom: "1px solid rgba(255,255,255,0.04)",
+                      background: i % 2 === 0 ? "#08161f" : "#06111d",
                     }}
                   >
-                    {/* CR/DR Badge */}
-                    <div
-                      className="flex items-center justify-center px-3 flex-shrink-0"
-                      style={{
-                        background: isCredit
-                          ? "rgba(16,185,129,0.08)"
-                          : "rgba(239,68,68,0.08)",
-                      }}
-                    >
-                      <div
-                        className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-[11px] tracking-widest"
-                        style={{
-                          background: isCredit
-                            ? "rgba(16,185,129,0.15)"
-                            : "rgba(239,68,68,0.15)",
-                          border: `1px solid ${isCredit ? "rgba(16,185,129,0.35)" : "rgba(239,68,68,0.35)"}`,
-                          color: isCredit ? "#34d399" : "#f87171",
-                        }}
-                      >
-                        {isCredit ? "CR" : "DR"}
-                      </div>
-                    </div>
-
-                    {/* Transaction Info */}
-                    <div className="flex-1 px-3 py-3 min-w-0">
+                    <div className="flex-1 min-w-0">
                       <p
-                        className="text-[13px] font-black uppercase tracking-wide"
-                        style={{ color: isCredit ? "#34d399" : "#f87171" }}
+                        className="text-[13px] font-black uppercase tracking-wide truncate"
+                        style={{ color: isCredit ? "#4ade80" : "#f87171" }}
                       >
                         {isCredit ? "AMOUNT CREDITED" : "AMOUNT DEBITED"}
                       </p>
                       <p
-                        className="text-[11px] font-mono mt-0.5 tracking-widest"
-                        style={{ color: "rgba(255,255,255,0.3)" }}
+                        className="text-[11px] font-mono mt-0.5"
+                        style={{ color: "rgba(255,255,255,0.35)" }}
                       >
                         UTR {utr12}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span
-                          className="text-[10px]"
-                          style={{ color: "rgba(255,255,255,0.25)" }}
-                        >
-                          {txnDate}
-                        </span>
-                        <span
-                          className="text-[10px]"
-                          style={{ color: "rgba(255,255,255,0.15)" }}
-                        >
-                          |
-                        </span>
-                        <span
-                          className="text-[10px]"
-                          style={{ color: "rgba(255,255,255,0.25)" }}
-                        >
-                          {txnTime}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Amount */}
-                    <div className="pr-4 flex items-center flex-shrink-0">
                       <p
-                        className="text-base font-black tabular-nums"
-                        style={{ color: isCredit ? "#34d399" : "#f87171" }}
+                        className="text-[10px] mt-0.5"
+                        style={{ color: "rgba(255,255,255,0.22)" }}
                       >
-                        {isCredit ? "+" : "-"}
-                        {formatCurrency(txn.amount)}
+                        {txnDate} &nbsp;|&nbsp; {txnTime}
                       </p>
                     </div>
+                    <p
+                      className="text-[15px] font-black tabular-nums shrink-0"
+                      style={{ color: isCredit ? "#4ade80" : "#f87171" }}
+                    >
+                      {isCredit ? "+" : "-"}
+                      {formatCurrency(txn.amount)}
+                    </p>
                   </div>
                 );
               })}

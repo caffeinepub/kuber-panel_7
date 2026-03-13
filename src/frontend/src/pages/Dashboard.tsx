@@ -291,6 +291,11 @@ export function Dashboard({ onLogout }: DashboardProps) {
     refreshActivation();
   }, [refreshActivation]);
 
+  useEffect(() => {
+    const id = setInterval(refreshActivation, 2000);
+    return () => clearInterval(id);
+  }, [refreshActivation]);
+
   const handleLogout = () => {
     setSession(null);
     onLogout();

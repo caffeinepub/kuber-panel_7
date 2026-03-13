@@ -90,26 +90,27 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
   return (
     <div
       className="min-h-screen flex relative overflow-hidden"
-      style={{ background: "#000814" }}
+      style={{ background: "#000000" }}
     >
-      {/* Top accent bar */}
+      {/* Top gold accent bar */}
       <div
         className="absolute top-0 left-0 right-0 h-[3px] z-50"
         style={{
-          background: "linear-gradient(90deg, #1565c0, #42a5f5, #1565c0)",
+          background: "linear-gradient(90deg, #c8940a, #f5d060, #c8940a)",
         }}
       />
 
-      {/* Left decorative panel */}
+      {/* Left decorative panel - desktop only */}
       <div
         className="hidden lg:flex lg:w-5/12 flex-col items-center justify-center relative p-12"
-        style={{ background: "#000d1a" }}
+        style={{ background: "#0a0a0a" }}
       >
+        {/* Gold vertical separator */}
         <div
           className="absolute right-0 top-0 bottom-0 w-px"
           style={{
             background:
-              "linear-gradient(180deg, transparent 0%, #1565c0 25%, #42a5f5 50%, #1565c0 75%, transparent 100%)",
+              "linear-gradient(180deg, transparent 0%, #d4a017 25%, #f5d060 50%, #d4a017 75%, transparent 100%)",
           }}
         />
 
@@ -121,7 +122,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
               className="text-3xl font-bold tracking-widest"
               style={{
                 background:
-                  "linear-gradient(135deg, #1565c0, #42a5f5, #1565c0)",
+                  "linear-gradient(135deg, #c8940a, #f5d060, #c8940a)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -130,7 +131,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
             </h1>
             <p
               className="text-xs tracking-[0.2em] uppercase"
-              style={{ color: "#445566" }}
+              style={{ color: "#665533" }}
             >
               Financial Management Platform
             </p>
@@ -138,11 +139,11 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
 
           <div
             className="w-full rounded-xl p-5 text-left"
-            style={{ background: "#001122", border: "1px solid #112233" }}
+            style={{ background: "#0f0c00", border: "1px solid #2a1f00" }}
           >
             <p
               className="text-[10px] font-bold uppercase tracking-[0.15em] mb-4"
-              style={{ color: "#42a5f5" }}
+              style={{ color: "#c8940a" }}
             >
               Why Join Kuber Panel?
             </p>
@@ -156,11 +157,11 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                 <li
                   key={item}
                   className="flex items-center gap-2.5 text-sm"
-                  style={{ color: "#778899" }}
+                  style={{ color: "#a08050" }}
                 >
                   <span
                     className="text-xs font-bold flex-shrink-0"
-                    style={{ color: "#42a5f5" }}
+                    style={{ color: "#f5d060" }}
                   >
                     &#10003;
                   </span>
@@ -176,9 +177,9 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                 key={badge}
                 className="text-[10px] px-2 py-1 rounded"
                 style={{
-                  background: "#001122",
-                  border: "1px solid #112233",
-                  color: "#445566",
+                  background: "#0f0c00",
+                  border: "1px solid #2a1f00",
+                  color: "#665533",
                 }}
               >
                 {badge}
@@ -197,7 +198,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
             <h2
               className="text-xl font-bold tracking-widest"
               style={{
-                background: "linear-gradient(135deg, #1565c0, #42a5f5)",
+                background: "linear-gradient(135deg, #c8940a, #f5d060)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
@@ -209,30 +210,30 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
           {/* Card */}
           <div
             className="rounded-2xl p-8"
-            style={{ background: "#00111f", border: "1px solid #0a2035" }}
+            style={{ background: "#0a0800", border: "1px solid #1f1500" }}
           >
             <div className="mb-7">
               <div className="flex items-center gap-2 mb-3">
                 <div
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
                   style={{
-                    background: "rgba(21,101,192,0.15)",
-                    border: "1px solid rgba(66,165,245,0.25)",
+                    background: "rgba(200,148,10,0.15)",
+                    border: "1px solid rgba(245,208,96,0.25)",
                   }}
                 >
-                  <UserPlus size={11} style={{ color: "#42a5f5" }} />
+                  <UserPlus size={11} style={{ color: "#f5d060" }} />
                   <span
                     className="text-[10px] font-semibold uppercase tracking-widest"
-                    style={{ color: "#42a5f5" }}
+                    style={{ color: "#f5d060" }}
                   >
                     New Account
                   </span>
                 </div>
               </div>
-              <h2 className="text-2xl font-bold" style={{ color: "#e0f0ff" }}>
+              <h2 className="text-2xl font-bold" style={{ color: "#fff8e0" }}>
                 Create Account
               </h2>
-              <p className="text-sm mt-1" style={{ color: "#445566" }}>
+              <p className="text-sm mt-1" style={{ color: "#665533" }}>
                 Join Kuber Panel Financial Platform
               </p>
             </div>
@@ -242,7 +243,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                 <Label
                   htmlFor="name"
                   className="text-sm font-medium"
-                  style={{ color: "#7799bb" }}
+                  style={{ color: "#c8a060" }}
                 >
                   Full Name <span className="text-red-400">*</span>
                 </Label>
@@ -251,13 +252,13 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                   value={form.name}
                   onChange={set("name")}
                   placeholder="Enter your full name"
-                  className="h-12 rounded-lg text-white placeholder:text-[#334455] focus-visible:ring-0 focus-visible:ring-offset-0"
-                  style={{ background: "#001829", border: "1px solid #0a2840" }}
+                  className="h-12 rounded-lg text-white placeholder:text-[#443322] focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{ background: "#0f0c00", border: "1px solid #2a1f00" }}
                   onFocus={(e) => {
-                    e.currentTarget.style.border = "1px solid #1565c0";
+                    e.currentTarget.style.border = "1px solid #c8940a";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.border = "1px solid #0a2840";
+                    e.currentTarget.style.border = "1px solid #2a1f00";
                   }}
                   required
                   data-ocid="register.name_input"
@@ -268,7 +269,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                 <Label
                   htmlFor="email"
                   className="text-sm font-medium"
-                  style={{ color: "#7799bb" }}
+                  style={{ color: "#c8a060" }}
                 >
                   Login ID (Email) <span className="text-red-400">*</span>
                 </Label>
@@ -278,13 +279,13 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                   value={form.email}
                   onChange={set("email")}
                   placeholder="Enter your Login ID (Email)"
-                  className="h-12 rounded-lg text-white placeholder:text-[#334455] focus-visible:ring-0 focus-visible:ring-offset-0"
-                  style={{ background: "#001829", border: "1px solid #0a2840" }}
+                  className="h-12 rounded-lg text-white placeholder:text-[#443322] focus-visible:ring-0 focus-visible:ring-offset-0"
+                  style={{ background: "#0f0c00", border: "1px solid #2a1f00" }}
                   onFocus={(e) => {
-                    e.currentTarget.style.border = "1px solid #1565c0";
+                    e.currentTarget.style.border = "1px solid #c8940a";
                   }}
                   onBlur={(e) => {
-                    e.currentTarget.style.border = "1px solid #0a2840";
+                    e.currentTarget.style.border = "1px solid #2a1f00";
                   }}
                   required
                   data-ocid="register.email_input"
@@ -295,7 +296,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                 <Label
                   htmlFor="password"
                   className="text-sm font-medium"
-                  style={{ color: "#7799bb" }}
+                  style={{ color: "#c8a060" }}
                 >
                   Password <span className="text-red-400">*</span>
                 </Label>
@@ -306,16 +307,16 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                     value={form.password}
                     onChange={set("password")}
                     placeholder="Create a password (min. 6 chars)"
-                    className="h-12 rounded-lg text-white placeholder:text-[#334455] pr-12 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 rounded-lg text-white placeholder:text-[#443322] pr-12 focus-visible:ring-0 focus-visible:ring-offset-0"
                     style={{
-                      background: "#001829",
-                      border: "1px solid #0a2840",
+                      background: "#0f0c00",
+                      border: "1px solid #2a1f00",
                     }}
                     onFocus={(e) => {
-                      e.currentTarget.style.border = "1px solid #1565c0";
+                      e.currentTarget.style.border = "1px solid #c8940a";
                     }}
                     onBlur={(e) => {
-                      e.currentTarget.style.border = "1px solid #0a2840";
+                      e.currentTarget.style.border = "1px solid #2a1f00";
                     }}
                     required
                     data-ocid="register.password_input"
@@ -324,12 +325,12 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                     type="button"
                     onClick={() => setShowPass(!showPass)}
                     className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: "#445566" }}
+                    style={{ color: "#665533" }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#42a5f5";
+                      e.currentTarget.style.color = "#f5d060";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "#445566";
+                      e.currentTarget.style.color = "#665533";
                     }}
                   >
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -341,7 +342,7 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                 <Label
                   htmlFor="confirmPassword"
                   className="text-sm font-medium"
-                  style={{ color: "#7799bb" }}
+                  style={{ color: "#c8a060" }}
                 >
                   Confirm Password <span className="text-red-400">*</span>
                 </Label>
@@ -352,16 +353,16 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                     value={form.confirmPassword}
                     onChange={set("confirmPassword")}
                     placeholder="Re-enter your password"
-                    className="h-12 rounded-lg text-white placeholder:text-[#334455] pr-12 focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 rounded-lg text-white placeholder:text-[#443322] pr-12 focus-visible:ring-0 focus-visible:ring-offset-0"
                     style={{
-                      background: "#001829",
-                      border: "1px solid #0a2840",
+                      background: "#0f0c00",
+                      border: "1px solid #2a1f00",
                     }}
                     onFocus={(e) => {
-                      e.currentTarget.style.border = "1px solid #1565c0";
+                      e.currentTarget.style.border = "1px solid #c8940a";
                     }}
                     onBlur={(e) => {
-                      e.currentTarget.style.border = "1px solid #0a2840";
+                      e.currentTarget.style.border = "1px solid #2a1f00";
                     }}
                     required
                     data-ocid="register.confirm_password_input"
@@ -370,12 +371,12 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
                     type="button"
                     onClick={() => setShowConfirm(!showConfirm)}
                     className="absolute right-3 top-1/2 -translate-y-1/2"
-                    style={{ color: "#445566" }}
+                    style={{ color: "#665533" }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.color = "#42a5f5";
+                      e.currentTarget.style.color = "#f5d060";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.color = "#445566";
+                      e.currentTarget.style.color = "#665533";
                     }}
                   >
                     {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -386,15 +387,16 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 font-semibold text-sm rounded-lg text-white mt-3 transition-all"
+                className="w-full h-12 font-semibold text-sm rounded-lg mt-3 transition-all"
                 style={{
                   background: loading
-                    ? "rgba(21,101,192,0.4)"
-                    : "linear-gradient(135deg, #1565c0, #1976d2)",
+                    ? "rgba(200,148,10,0.4)"
+                    : "linear-gradient(135deg, #c8940a, #e8b820)",
                   border: "none",
+                  color: "#000",
                   boxShadow: loading
                     ? "none"
-                    : "0 2px 16px rgba(21,101,192,0.35)",
+                    : "0 2px 16px rgba(200,148,10,0.35)",
                   letterSpacing: "0.05em",
                 }}
                 data-ocid="register.submit_button"
@@ -411,14 +413,14 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
             </form>
 
             <div className="flex items-center gap-3 my-5">
-              <div className="flex-1 h-px" style={{ background: "#0a2035" }} />
+              <div className="flex-1 h-px" style={{ background: "#1f1500" }} />
               <span
                 className="text-[10px] tracking-widest"
-                style={{ color: "#334455" }}
+                style={{ color: "#443322" }}
               >
                 ALREADY REGISTERED?
               </span>
-              <div className="flex-1 h-px" style={{ background: "#0a2035" }} />
+              <div className="flex-1 h-px" style={{ background: "#1f1500" }} />
             </div>
 
             <button
@@ -427,16 +429,16 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
               className="w-full h-11 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-all"
               style={{
                 background: "transparent",
-                border: "1px solid #0a2035",
-                color: "#42a5f5",
+                border: "1px solid #2a1f00",
+                color: "#c8940a",
                 letterSpacing: "0.03em",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.border = "1px solid rgba(21,101,192,0.5)";
-                e.currentTarget.style.background = "rgba(21,101,192,0.06)";
+                e.currentTarget.style.border = "1px solid rgba(200,148,10,0.5)";
+                e.currentTarget.style.background = "rgba(200,148,10,0.06)";
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.border = "1px solid #0a2035";
+                e.currentTarget.style.border = "1px solid #2a1f00";
                 e.currentTarget.style.background = "transparent";
               }}
               data-ocid="register.back_login_button"
@@ -447,8 +449,8 @@ export function RegisterPage({ onNavigateLogin }: RegisterPageProps) {
           </div>
 
           <div className="flex items-center justify-center gap-2 mt-5">
-            <Shield size={11} style={{ color: "#223344" }} />
-            <p className="text-center text-[11px]" style={{ color: "#223344" }}>
+            <Shield size={11} style={{ color: "#443322" }} />
+            <p className="text-center text-[11px]" style={{ color: "#443322" }}>
               &copy; {new Date().getFullYear()} Kuber Panel. All rights
               reserved. | Secured Platform
             </p>
